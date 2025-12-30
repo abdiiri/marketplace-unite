@@ -1,13 +1,15 @@
 import { useState } from "react";
 import { Helmet } from "react-helmet-async";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { Eye, EyeOff, Mail, Lock, Chrome } from "lucide-react";
+import { Eye, EyeOff, Mail, Lock, Chrome, ArrowLeft } from "lucide-react";
+import omtiiLogo from "@/assets/omtii-logo.png";
 
 const Login = () => {
+  const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -21,19 +23,25 @@ const Login = () => {
   return (
     <>
       <Helmet>
-        <title>Sign In - MarketFlow</title>
-        <meta name="description" content="Sign in to your MarketFlow account to access your dashboard, manage orders, and connect with clients." />
+        <title>Sign In - OMTII</title>
+        <meta name="description" content="Sign in to your OMTII account to access your dashboard, manage orders, and connect with clients." />
       </Helmet>
       <div className="min-h-screen flex">
         {/* Left Side - Form */}
         <div className="flex-1 flex items-center justify-center p-8">
           <div className="w-full max-w-md">
+            {/* Back Button */}
+            <button
+              onClick={() => navigate(-1)}
+              className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground mb-4 transition-colors"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Go Back
+            </button>
+
             {/* Logo */}
             <Link to="/" className="flex items-center gap-2 mb-8">
-              <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center shadow-glow">
-                <span className="text-primary-foreground font-display font-bold text-xl">M</span>
-              </div>
-              <span className="font-display font-bold text-2xl">MarketFlow</span>
+              <img src={omtiiLogo} alt="OMTII" className="h-10 w-auto" />
             </Link>
 
             <h1 className="font-display text-3xl font-bold mb-2">Welcome back</h1>
@@ -129,7 +137,7 @@ const Login = () => {
               Your projects deserve the best talent
             </h2>
             <p className="text-primary-foreground/70 text-lg mb-8">
-              Join thousands of businesses finding top professionals on MarketFlow
+              Join thousands of businesses finding top professionals on OMTII
             </p>
             <div className="grid grid-cols-3 gap-4">
               {[

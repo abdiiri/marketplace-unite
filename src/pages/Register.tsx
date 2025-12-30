@@ -1,13 +1,15 @@
 import { useState } from "react";
 import { Helmet } from "react-helmet-async";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { Eye, EyeOff, Mail, Lock, User, Chrome, Check } from "lucide-react";
+import { Eye, EyeOff, Mail, Lock, User, Chrome, Check, ArrowLeft } from "lucide-react";
+import omtiiLogo from "@/assets/omtii-logo.png";
 
 const Register = () => {
+  const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
@@ -30,8 +32,8 @@ const Register = () => {
   return (
     <>
       <Helmet>
-        <title>Create Account - MarketFlow</title>
-        <meta name="description" content="Join MarketFlow and start connecting with top freelancers or offer your services to millions of clients worldwide." />
+        <title>Create Account - OMTII</title>
+        <meta name="description" content="Join OMTII and start connecting with top freelancers or offer your services to millions of clients worldwide." />
       </Helmet>
       <div className="min-h-screen flex">
         {/* Left Side - Image */}
@@ -41,7 +43,7 @@ const Register = () => {
               Start your journey today
             </h2>
             <p className="text-primary-foreground/70 text-lg mb-8">
-              Whether you're looking to hire or get hired, MarketFlow is your gateway to success
+              Whether you're looking to hire or get hired, OMTII is your gateway to success
             </p>
             <div className="space-y-4 text-left">
               {[
@@ -64,12 +66,18 @@ const Register = () => {
         {/* Right Side - Form */}
         <div className="flex-1 flex items-center justify-center p-8">
           <div className="w-full max-w-md">
+            {/* Back Button */}
+            <button
+              onClick={() => navigate(-1)}
+              className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground mb-4 transition-colors"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Go Back
+            </button>
+
             {/* Logo */}
             <Link to="/" className="flex items-center gap-2 mb-8">
-              <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center shadow-glow">
-                <span className="text-primary-foreground font-display font-bold text-xl">M</span>
-              </div>
-              <span className="font-display font-bold text-2xl">MarketFlow</span>
+              <img src={omtiiLogo} alt="OMTII" className="h-10 w-auto" />
             </Link>
 
             <h1 className="font-display text-3xl font-bold mb-2">Create your account</h1>

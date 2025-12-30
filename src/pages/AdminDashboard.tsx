@@ -1,5 +1,5 @@
 import { Helmet } from "react-helmet-async";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -21,9 +21,12 @@ import {
   CheckCircle2,
   Clock,
   Eye,
+  ArrowLeft,
 } from "lucide-react";
+import omtiiLogo from "@/assets/omtii-logo.png";
 
 const AdminDashboard = () => {
+  const navigate = useNavigate();
   const stats = [
     { title: "Total Users", value: "24,589", change: "+1,234", icon: Users },
     { title: "Active Vendors", value: "2,845", change: "+156", icon: Package },
@@ -68,7 +71,7 @@ const AdminDashboard = () => {
   return (
     <>
       <Helmet>
-        <title>Admin Dashboard - MarketFlow</title>
+        <title>Admin Dashboard - OMTII</title>
         <meta name="description" content="Manage users, vendors, orders, and platform settings from the admin dashboard." />
       </Helmet>
       <div className="min-h-screen bg-background">
@@ -77,11 +80,14 @@ const AdminDashboard = () => {
           <div className="container mx-auto px-4">
             <div className="flex h-16 items-center justify-between">
               <div className="flex items-center gap-4">
+                <button
+                  onClick={() => navigate(-1)}
+                  className="text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  <ArrowLeft className="h-5 w-5" />
+                </button>
                 <Link to="/" className="flex items-center gap-2">
-                  <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center shadow-glow">
-                    <span className="text-primary-foreground font-display font-bold text-lg">M</span>
-                  </div>
-                  <span className="font-display font-bold text-xl hidden sm:block">MarketFlow</span>
+                  <img src={omtiiLogo} alt="OMTII" className="h-9 w-auto" />
                 </Link>
                 <Badge variant="default" className="gap-1">
                   <Shield className="h-3 w-3" />
