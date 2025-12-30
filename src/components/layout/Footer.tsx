@@ -9,6 +9,7 @@ import {
   Youtube,
   Send,
 } from "lucide-react";
+import omtiiLogo from "@/assets/omtii-logo.png";
 
 const Footer = () => {
   const footerLinks = {
@@ -79,10 +80,7 @@ const Footer = () => {
           {/* Brand */}
           <div className="col-span-2 md:col-span-4 lg:col-span-1">
             <Link to="/" className="flex items-center gap-2 mb-4">
-              <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center shadow-glow">
-                <span className="text-primary-foreground font-display font-bold text-lg">M</span>
-              </div>
-              <span className="font-display font-bold text-xl">MarketFlow</span>
+              <img src={omtiiLogo} alt="OMTII" className="h-10 w-auto" />
             </Link>
             <p className="text-muted-foreground text-sm mb-4">
               The modern marketplace connecting talented freelancers with clients worldwide.
@@ -173,7 +171,7 @@ const Footer = () => {
         <div className="container mx-auto px-4 py-6">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             <p className="text-sm text-muted-foreground">
-              © {new Date().getFullYear()} MarketFlow. All rights reserved.
+              © {new Date().getFullYear()} OMTII. All rights reserved.
             </p>
             <div className="flex gap-6">
               <Link

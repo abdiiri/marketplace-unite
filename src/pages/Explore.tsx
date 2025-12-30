@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { Helmet } from "react-helmet-async";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useSearchParams, useNavigate } from "react-router-dom";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
@@ -26,6 +26,7 @@ import {
 import { toast } from "sonner";
 
 const Explore = () => {
+  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const [showFilters, setShowFilters] = useState(false);
   const [searchQuery, setSearchQuery] = useState(searchParams.get("q") || "");
@@ -311,8 +312,8 @@ const Explore = () => {
       <Helmet>
         <title>
           {activeCategory !== "All"
-            ? `${activeCategory} Services - MarketFlow`
-            : "Explore Services - MarketFlow"}
+            ? `${activeCategory} Services - OMTII`
+            : "Explore Services - OMTII"}
         </title>
         <meta
           name="description"
@@ -325,13 +326,13 @@ const Explore = () => {
           {/* Header */}
           <div className="border-b border-border bg-card/50">
             <div className="container mx-auto px-4 py-8">
-              <Link
-                to="/"
+              <button
+                onClick={() => navigate(-1)}
                 className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground mb-4 transition-colors"
               >
                 <ArrowLeft className="h-4 w-4" />
-                Back to Home
-              </Link>
+                Go Back
+              </button>
               <h1 className="font-display text-3xl sm:text-4xl font-bold mb-2">
                 {activeCategory !== "All" ? `${activeCategory} Services` : "Explore Services"}
               </h1>
