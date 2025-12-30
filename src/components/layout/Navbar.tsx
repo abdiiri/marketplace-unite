@@ -13,6 +13,7 @@ import {
   Heart,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import omtiiLogo from "@/assets/omtii-logo.png";
 
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -33,12 +34,7 @@ const Navbar = () => {
         <div className="flex h-16 items-center justify-between gap-4">
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2 flex-shrink-0">
-            <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center shadow-glow">
-              <span className="text-primary-foreground font-display font-bold text-lg">M</span>
-            </div>
-            <span className="font-display font-bold text-xl hidden sm:block">
-              MarketFlow
-            </span>
+            <img src={omtiiLogo} alt="OMTII" className="h-10 w-auto" />
           </Link>
 
           {/* Desktop Search */}
