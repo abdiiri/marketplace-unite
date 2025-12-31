@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -11,14 +11,28 @@ import {
   Bell,
   MessageSquare,
   Heart,
+  LogOut,
+  LayoutDashboard,
+  Shield,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import omtiiLogo from "@/assets/omtii-logo.png";
+import { useAuth } from "@/hooks/useAuth";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
+  const { user, profile, isAdmin, isSuperAdmin, isVendor, signOut } = useAuth();
 
   const navLinks = [
     { name: "Explore", path: "/explore" },
@@ -27,6 +41,17 @@ const Navbar = () => {
   ];
 
   const isActive = (path: string) => location.pathname === path;
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate("/");
+  };
+
+  const getDashboardLink = () => {
+    if (isSuperAdmin || isAdmin) return "/admin/dashboard";
+    if (isVendor) return "/vendor/dashboard";
+    return null;
+  };
 
   return (
     <nav className="sticky top-0 z-50 w-full border-b border-border/50 bg-background/80 backdrop-blur-xl">
@@ -88,16 +113,64 @@ const Navbar = () => {
               </Badge>
             </Button>
             <div className="w-px h-6 bg-border mx-2" />
-            <Link to="/login">
-              <Button variant="ghost" size="sm">
-                Sign In
-              </Button>
-            </Link>
-            <Link to="/register">
-              <Button variant="hero" size="sm">
-                Get Started
-              </Button>
-            </Link>
+
+            {user ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="gap-2">
+                    <div className="h-8 w-8 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-primary-foreground font-semibold text-sm">
+                      {profile?.full_name?.charAt(0) || user.email?.charAt(0) || "U"}
+                    </div>
+                    <span className="hidden lg:block max-w-24 truncate">
+                      {profile?.full_name || "Account"}
+                    </span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuLabel>
+                    <div className="flex flex-col">
+                      <span>{profile?.full_name || "User"}</span>
+                      <span className="text-xs text-muted-foreground font-normal">
+                        {user.email}
+                      </span>
+                    </div>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  {getDashboardLink() && (
+                    <DropdownMenuItem onClick={() => navigate(getDashboardLink()!)}>
+                      {isSuperAdmin || isAdmin ? (
+                        <Shield className="h-4 w-4 mr-2" />
+                      ) : (
+                        <LayoutDashboard className="h-4 w-4 mr-2" />
+                      )}
+                      Dashboard
+                    </DropdownMenuItem>
+                  )}
+                  <DropdownMenuItem onClick={() => navigate("/profile")}>
+                    <User className="h-4 w-4 mr-2" />
+                    Profile
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleSignOut} className="text-destructive">
+                    <LogOut className="h-4 w-4 mr-2" />
+                    Sign Out
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <>
+                <Link to="/login">
+                  <Button variant="ghost" size="sm">
+                    Sign In
+                  </Button>
+                </Link>
+                <Link to="/register">
+                  <Button variant="hero" size="sm">
+                    Get Started
+                  </Button>
+                </Link>
+              </>
+            )}
           </div>
 
           {/* Mobile Actions */}
@@ -159,17 +232,50 @@ const Navbar = () => {
                 </Link>
               ))}
               <div className="h-px bg-border my-2" />
-              <Link to="/login" onClick={() => setIsMenuOpen(false)}>
-                <Button variant="ghost" className="w-full justify-start">
-                  <User className="h-4 w-4 mr-2" />
-                  Sign In
-                </Button>
-              </Link>
-              <Link to="/register" onClick={() => setIsMenuOpen(false)}>
-                <Button variant="hero" className="w-full">
-                  Get Started
-                </Button>
-              </Link>
+
+              {user ? (
+                <>
+                  {getDashboardLink() && (
+                    <Link to={getDashboardLink()!} onClick={() => setIsMenuOpen(false)}>
+                      <Button variant="ghost" className="w-full justify-start">
+                        <LayoutDashboard className="h-4 w-4 mr-2" />
+                        Dashboard
+                      </Button>
+                    </Link>
+                  )}
+                  <Link to="/profile" onClick={() => setIsMenuOpen(false)}>
+                    <Button variant="ghost" className="w-full justify-start">
+                      <User className="h-4 w-4 mr-2" />
+                      Profile
+                    </Button>
+                  </Link>
+                  <Button
+                    variant="ghost"
+                    className="w-full justify-start text-destructive"
+                    onClick={() => {
+                      setIsMenuOpen(false);
+                      handleSignOut();
+                    }}
+                  >
+                    <LogOut className="h-4 w-4 mr-2" />
+                    Sign Out
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Link to="/login" onClick={() => setIsMenuOpen(false)}>
+                    <Button variant="ghost" className="w-full justify-start">
+                      <User className="h-4 w-4 mr-2" />
+                      Sign In
+                    </Button>
+                  </Link>
+                  <Link to="/register" onClick={() => setIsMenuOpen(false)}>
+                    <Button variant="hero" className="w-full">
+                      Get Started
+                    </Button>
+                  </Link>
+                </>
+              )}
             </div>
           </div>
         )}

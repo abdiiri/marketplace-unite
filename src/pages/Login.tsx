@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Helmet } from "react-helmet-async";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -9,13 +9,32 @@ import { Eye, EyeOff, Mail, Lock, Chrome, ArrowLeft, Loader2 } from "lucide-reac
 import omtiiLogo from "@/assets/omtii-logo.png";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useAuth } from "@/hooks/useAuth";
 
 const Login = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const { user, roles, loading: authLoading } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+
+  // Redirect if already logged in
+  useEffect(() => {
+    if (!authLoading && user && roles.length > 0) {
+      const from = (location.state as any)?.from?.pathname;
+      if (from) {
+        navigate(from, { replace: true });
+      } else if (roles.includes("super_admin") || roles.includes("admin")) {
+        navigate("/admin/dashboard", { replace: true });
+      } else if (roles.includes("vendor")) {
+        navigate("/vendor/dashboard", { replace: true });
+      } else {
+        navigate("/", { replace: true });
+      }
+    }
+  }, [user, roles, authLoading, navigate, location]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -40,7 +59,7 @@ const Login = () => {
 
       if (data.user) {
         toast.success("Welcome back!");
-        navigate("/");
+        // Navigation handled by useEffect
       }
     } catch (error: any) {
       toast.error("An unexpected error occurred. Please try again.");
