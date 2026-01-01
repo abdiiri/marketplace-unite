@@ -15,6 +15,8 @@ interface AuthContextType {
     email: string | null;
     account_type: string | null;
     avatar_url: string | null;
+    phone: string | null;
+    bio: string | null;
   } | null;
   hasRole: (role: AppRole) => boolean;
   isSuperAdmin: boolean;
@@ -39,7 +41,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Fetch profile
       const { data: profileData } = await supabase
         .from("profiles")
-        .select("id, full_name, email, account_type, avatar_url")
+        .select("id, full_name, email, account_type, avatar_url, phone, bio")
         .eq("id", userId)
         .maybeSingle();
 
