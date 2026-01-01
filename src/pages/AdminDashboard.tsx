@@ -5,9 +5,19 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { UserRoleManager } from "@/components/admin/UserRoleManager";
+import { ServiceManager } from "@/components/admin/ServiceManager";
+import { CategoryManager } from "@/components/admin/CategoryManager";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   Users,
   Package,
@@ -18,17 +28,19 @@ import {
   Settings,
   Bell,
   Search,
-  MoreVertical,
-  UserCheck,
-  AlertTriangle,
   Clock,
-  Eye,
   ArrowLeft,
   LogOut,
   ChevronDown,
   ChevronUp,
+  FolderOpen,
+  Pencil,
+  Trash2,
+  User,
 } from "lucide-react";
 import omtiiLogo from "@/assets/omtii-logo.png";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 
 type AppRole = "admin" | "vendor" | "buyer" | "super_admin";
 
@@ -39,6 +51,8 @@ interface UserWithRoles {
   account_type: string | null;
   created_at: string;
   roles: AppRole[];
+  phone?: string | null;
+  bio?: string | null;
 }
 
 const AdminDashboard = () => {
@@ -48,6 +62,13 @@ const AdminDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [expandedUserId, setExpandedUserId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [editingUser, setEditingUser] = useState<UserWithRoles | null>(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [editFormData, setEditFormData] = useState({
+    full_name: "",
+    phone: "",
+    bio: "",
+  });
 
   const stats = [
     { title: "Total Users", value: users.length.toString(), change: "+0", icon: Users },
@@ -59,7 +80,6 @@ const AdminDashboard = () => {
   const fetchUsers = async () => {
     setLoading(true);
     try {
-      // Fetch all profiles
       const { data: profiles, error: profilesError } = await supabase
         .from("profiles")
         .select("*")
@@ -67,20 +87,20 @@ const AdminDashboard = () => {
 
       if (profilesError) throw profilesError;
 
-      // Fetch all roles
       const { data: rolesData, error: rolesError } = await supabase
         .from("user_roles")
         .select("user_id, role");
 
       if (rolesError) throw rolesError;
 
-      // Map roles to users
-      const usersWithRoles: UserWithRoles[] = (profiles || []).map((p) => ({
+      const usersWithRoles: UserWithRoles[] = (profiles || []).map((p: any) => ({
         id: p.id,
         full_name: p.full_name,
         email: p.email,
         account_type: p.account_type,
         created_at: p.created_at,
+        phone: p.phone,
+        bio: p.bio,
         roles: rolesData
           ?.filter((r) => r.user_id === p.id)
           .map((r) => r.role as AppRole) || [],
@@ -136,6 +156,59 @@ const AdminDashboard = () => {
     return date.toLocaleDateString();
   };
 
+  const handleEditUser = (u: UserWithRoles) => {
+    setEditingUser(u);
+    setEditFormData({
+      full_name: u.full_name || "",
+      phone: u.phone || "",
+      bio: u.bio || "",
+    });
+    setIsEditDialogOpen(true);
+  };
+
+  const handleUpdateUser = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingUser) return;
+
+    try {
+      const { error } = await supabase
+        .from("profiles")
+        .update({
+          full_name: editFormData.full_name,
+          phone: editFormData.phone,
+          bio: editFormData.bio,
+        })
+        .eq("id", editingUser.id);
+
+      if (error) throw error;
+
+      toast.success("User updated successfully!");
+      setIsEditDialogOpen(false);
+      setEditingUser(null);
+      fetchUsers();
+    } catch (error: any) {
+      toast.error(error.message || "Failed to update user");
+    }
+  };
+
+  const handleDeleteUser = async (userId: string) => {
+    if (!confirm("Are you sure you want to delete this user? This action cannot be undone.")) return;
+
+    try {
+      const { error } = await supabase
+        .from("profiles")
+        .delete()
+        .eq("id", userId);
+
+      if (error) throw error;
+
+      toast.success("User deleted successfully!");
+      fetchUsers();
+    } catch (error: any) {
+      toast.error(error.message || "Failed to delete user");
+    }
+  };
+
   return (
     <>
       <Helmet>
@@ -163,24 +236,11 @@ const AdminDashboard = () => {
                 </Badge>
               </div>
 
-              <div className="flex-1 max-w-md mx-8 hidden md:block">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    type="search"
-                    placeholder="Search users..."
-                    className="pl-10"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                  />
-                </div>
-              </div>
-
               <div className="flex items-center gap-2">
                 <Button variant="ghost" size="icon" className="relative">
                   <Bell className="h-5 w-5" />
                 </Button>
-                <Button variant="ghost" size="icon">
+                <Button variant="ghost" size="icon" onClick={() => navigate("/profile")}>
                   <Settings className="h-5 w-5" />
                 </Button>
                 <Button variant="ghost" size="icon" onClick={handleSignOut}>
@@ -235,131 +295,230 @@ const AdminDashboard = () => {
             ))}
           </div>
 
-          <div className="grid lg:grid-cols-3 gap-8">
-            {/* Users List */}
-            <div className="lg:col-span-2">
+          {/* Tabs for different management sections */}
+          <Tabs defaultValue="users" className="space-y-6">
+            <TabsList className="grid w-full grid-cols-3 lg:w-auto lg:inline-flex">
+              <TabsTrigger value="users" className="gap-2">
+                <Users className="h-4 w-4" />
+                Users
+              </TabsTrigger>
+              <TabsTrigger value="services" className="gap-2">
+                <Package className="h-4 w-4" />
+                Services
+              </TabsTrigger>
+              <TabsTrigger value="categories" className="gap-2">
+                <FolderOpen className="h-4 w-4" />
+                Categories
+              </TabsTrigger>
+            </TabsList>
+
+            {/* Users Tab */}
+            <TabsContent value="users">
+              <div className="grid lg:grid-cols-3 gap-8">
+                <div className="lg:col-span-2">
+                  <Card className="glass-card">
+                    <CardHeader className="flex flex-row items-center justify-between">
+                      <CardTitle className="flex items-center gap-2">
+                        <Users className="h-5 w-5" />
+                        All Users ({filteredUsers.length})
+                      </CardTitle>
+                      <div className="relative w-64">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input
+                          type="search"
+                          placeholder="Search users..."
+                          className="pl-10"
+                          value={searchQuery}
+                          onChange={(e) => setSearchQuery(e.target.value)}
+                        />
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      {loading ? (
+                        <div className="flex items-center justify-center py-8">
+                          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                        </div>
+                      ) : filteredUsers.length === 0 ? (
+                        <p className="text-center text-muted-foreground py-8">No users found</p>
+                      ) : (
+                        <div className="space-y-3">
+                          {filteredUsers.map((u) => (
+                            <div
+                              key={u.id}
+                              className="p-4 rounded-xl bg-secondary/50 hover:bg-secondary transition-colors"
+                            >
+                              <div
+                                className="flex items-center justify-between cursor-pointer"
+                                onClick={() =>
+                                  setExpandedUserId(expandedUserId === u.id ? null : u.id)
+                                }
+                              >
+                                <div className="flex items-center gap-4">
+                                  <div className="h-10 w-10 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center">
+                                    <span className="font-semibold text-sm">
+                                      {u.full_name?.charAt(0) || u.email?.charAt(0) || "?"}
+                                    </span>
+                                  </div>
+                                  <div>
+                                    <div className="flex items-center gap-2 flex-wrap">
+                                      <p className="font-medium">{u.full_name || "No name"}</p>
+                                      {u.roles.map(getRoleBadge)}
+                                    </div>
+                                    <p className="text-sm text-muted-foreground">{u.email}</p>
+                                  </div>
+                                </div>
+                                <div className="flex items-center gap-4">
+                                  <span className="text-sm text-muted-foreground hidden sm:block">
+                                    {formatDate(u.created_at)}
+                                  </span>
+                                  {isSuperAdmin && (
+                                    <div className="flex items-center gap-2">
+                                      <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleEditUser(u);
+                                        }}
+                                      >
+                                        <Pencil className="h-4 w-4" />
+                                      </Button>
+                                      <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleDeleteUser(u.id);
+                                        }}
+                                      >
+                                        <Trash2 className="h-4 w-4 text-destructive" />
+                                      </Button>
+                                      {expandedUserId === u.id ? (
+                                        <ChevronUp className="h-4 w-4" />
+                                      ) : (
+                                        <ChevronDown className="h-4 w-4" />
+                                      )}
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+
+                              {isSuperAdmin && expandedUserId === u.id && (
+                                <div className="mt-4 pt-4 border-t border-border">
+                                  <p className="text-sm font-medium mb-2">Manage Roles:</p>
+                                  <UserRoleManager
+                                    userId={u.id}
+                                    currentRoles={u.roles}
+                                    onRolesUpdated={fetchUsers}
+                                  />
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                </div>
+
+                <div className="space-y-6">
+                  {isSuperAdmin && (
+                    <Card className="glass-card border-destructive/50">
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2 text-destructive">
+                          <Shield className="h-5 w-5" />
+                          Super Admin
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="text-sm text-muted-foreground">
+                        <p>You have full access to:</p>
+                        <ul className="list-disc list-inside mt-2 space-y-1">
+                          <li>View and manage all users</li>
+                          <li>Assign and remove any role</li>
+                          <li>Edit or delete any service</li>
+                          <li>Edit or delete any category</li>
+                          <li>Access all platform analytics</li>
+                        </ul>
+                      </CardContent>
+                    </Card>
+                  )}
+                </div>
+              </div>
+            </TabsContent>
+
+            {/* Services Tab */}
+            <TabsContent value="services">
               <Card className="glass-card">
-                <CardHeader className="flex flex-row items-center justify-between">
+                <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <Users className="h-5 w-5" />
-                    All Users ({filteredUsers.length})
+                    <Package className="h-5 w-5" />
+                    All Services
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  {loading ? (
-                    <div className="flex items-center justify-center py-8">
-                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-                    </div>
-                  ) : filteredUsers.length === 0 ? (
-                    <p className="text-center text-muted-foreground py-8">No users found</p>
-                  ) : (
-                    <div className="space-y-3">
-                      {filteredUsers.map((u) => (
-                        <div
-                          key={u.id}
-                          className="p-4 rounded-xl bg-secondary/50 hover:bg-secondary transition-colors"
-                        >
-                          <div
-                            className="flex items-center justify-between cursor-pointer"
-                            onClick={() =>
-                              setExpandedUserId(expandedUserId === u.id ? null : u.id)
-                            }
-                          >
-                            <div className="flex items-center gap-4">
-                              <div className="h-10 w-10 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center">
-                                <span className="font-semibold text-sm">
-                                  {u.full_name?.charAt(0) || u.email?.charAt(0) || "?"}
-                                </span>
-                              </div>
-                              <div>
-                                <div className="flex items-center gap-2 flex-wrap">
-                                  <p className="font-medium">{u.full_name || "No name"}</p>
-                                  {u.roles.map(getRoleBadge)}
-                                </div>
-                                <p className="text-sm text-muted-foreground">{u.email}</p>
-                              </div>
-                            </div>
-                            <div className="flex items-center gap-4">
-                              <span className="text-sm text-muted-foreground hidden sm:block">
-                                {formatDate(u.created_at)}
-                              </span>
-                              {isSuperAdmin && (
-                                expandedUserId === u.id ? (
-                                  <ChevronUp className="h-4 w-4" />
-                                ) : (
-                                  <ChevronDown className="h-4 w-4" />
-                                )
-                              )}
-                            </div>
-                          </div>
-
-                          {/* Role Management (expanded) */}
-                          {isSuperAdmin && expandedUserId === u.id && (
-                            <div className="mt-4 pt-4 border-t border-border">
-                              <p className="text-sm font-medium mb-2">Manage Roles:</p>
-                              <UserRoleManager
-                                userId={u.id}
-                                currentRoles={u.roles}
-                                onRolesUpdated={fetchUsers}
-                              />
-                            </div>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  )}
+                  <ServiceManager />
                 </CardContent>
               </Card>
-            </div>
+            </TabsContent>
 
-            {/* Quick Actions */}
-            <div className="space-y-6">
+            {/* Categories Tab */}
+            <TabsContent value="categories">
               <Card className="glass-card">
                 <CardHeader>
-                  <CardTitle>Admin Actions</CardTitle>
+                  <CardTitle className="flex items-center gap-2">
+                    <FolderOpen className="h-5 w-5" />
+                    All Categories
+                  </CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-2">
-                  <Button variant="secondary" className="w-full justify-start gap-2">
-                    <UserCheck className="h-4 w-4" />
-                    Review Verifications
-                  </Button>
-                  <Button variant="secondary" className="w-full justify-start gap-2">
-                    <Package className="h-4 w-4" />
-                    Manage Services
-                  </Button>
-                  <Button variant="secondary" className="w-full justify-start gap-2">
-                    <TrendingUp className="h-4 w-4" />
-                    View Reports
-                  </Button>
-                  <Button variant="secondary" className="w-full justify-start gap-2">
-                    <Settings className="h-4 w-4" />
-                    Platform Settings
-                  </Button>
+                <CardContent>
+                  <CategoryManager />
                 </CardContent>
               </Card>
-
-              {isSuperAdmin && (
-                <Card className="glass-card border-destructive/50">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-destructive">
-                      <Shield className="h-5 w-5" />
-                      Super Admin
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="text-sm text-muted-foreground">
-                    <p>You have full access to:</p>
-                    <ul className="list-disc list-inside mt-2 space-y-1">
-                      <li>View and manage all users</li>
-                      <li>Assign and remove any role</li>
-                      <li>Edit or delete any service</li>
-                      <li>Access all platform analytics</li>
-                    </ul>
-                  </CardContent>
-                </Card>
-              )}
-            </div>
-          </div>
+            </TabsContent>
+          </Tabs>
         </div>
+
+        {/* Edit User Dialog */}
+        <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <User className="h-5 w-5" />
+                Edit User
+              </DialogTitle>
+            </DialogHeader>
+            <form onSubmit={handleUpdateUser} className="space-y-4">
+              <div>
+                <Label htmlFor="edit_full_name">Full Name</Label>
+                <Input
+                  id="edit_full_name"
+                  value={editFormData.full_name}
+                  onChange={(e) => setEditFormData({ ...editFormData, full_name: e.target.value })}
+                />
+              </div>
+              <div>
+                <Label htmlFor="edit_phone">Phone</Label>
+                <Input
+                  id="edit_phone"
+                  value={editFormData.phone}
+                  onChange={(e) => setEditFormData({ ...editFormData, phone: e.target.value })}
+                />
+              </div>
+              <div>
+                <Label htmlFor="edit_bio">Bio</Label>
+                <Textarea
+                  id="edit_bio"
+                  value={editFormData.bio}
+                  onChange={(e) => setEditFormData({ ...editFormData, bio: e.target.value })}
+                  rows={3}
+                />
+              </div>
+              <Button type="submit" className="w-full">
+                Update User
+              </Button>
+            </form>
+          </DialogContent>
+        </Dialog>
       </div>
     </>
   );

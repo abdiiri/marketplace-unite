@@ -479,7 +479,11 @@ const VendorDashboard = () => {
                     <BarChart3 className="h-4 w-4" />
                     View Analytics
                   </Button>
-                  <Button variant="secondary" className="w-full justify-start gap-2">
+                  <Button 
+                    variant="secondary" 
+                    className="w-full justify-start gap-2"
+                    onClick={() => navigate("/profile")}
+                  >
                     <Settings className="h-4 w-4" />
                     Edit Profile
                   </Button>
