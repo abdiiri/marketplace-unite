@@ -18,10 +18,6 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import {
-  DollarSign,
-  ShoppingBag,
-  Users,
-  Star,
   TrendingUp,
   ArrowUpRight,
   ArrowDownRight,
@@ -39,6 +35,7 @@ import {
   LogOut,
   Pencil,
   Trash2,
+  Star,
 } from "lucide-react";
 import omtiiLogo from "@/assets/omtii-logo.png";
 
@@ -73,15 +70,15 @@ const VendorDashboard = () => {
       icon: Package,
     },
     {
-      title: "Published",
-      value: services.filter((s) => s.status === "published").length.toString(),
+      title: "Approved",
+      value: services.filter((s) => s.status === "approved").length.toString(),
       change: "+0",
       trend: "up",
       icon: CheckCircle2,
     },
     {
-      title: "Drafts",
-      value: services.filter((s) => s.status === "draft").length.toString(),
+      title: "Pending",
+      value: services.filter((s) => s.status === "pending").length.toString(),
       change: "0",
       trend: "up",
       icon: Clock,
@@ -139,17 +136,17 @@ const VendorDashboard = () => {
         if (error) throw error;
         toast.success("Service updated successfully!");
       } else {
-        // Create new service
+        // Create new service - status is "pending" for admin approval
         const { error } = await supabase.from("services").insert({
           user_id: user.id,
           title,
           description,
           price: price ? parseFloat(price) : null,
-          status: "draft",
+          status: "pending",
         });
 
         if (error) throw error;
-        toast.success("Service created successfully!");
+        toast.success("Service submitted for approval!");
       }
 
       setIsDialogOpen(false);
@@ -179,26 +176,6 @@ const VendorDashboard = () => {
     }
   };
 
-  const togglePublish = async (service: Service) => {
-    if (!user) return;
-
-    const newStatus = service.status === "published" ? "draft" : "published";
-
-    try {
-      const { error } = await supabase
-        .from("services")
-        .update({ status: newStatus })
-        .eq("id", service.id)
-        .eq("user_id", user.id);
-
-      if (error) throw error;
-      toast.success(`Service ${newStatus === "published" ? "published" : "unpublished"}!`);
-      fetchServices();
-    } catch (error: any) {
-      toast.error(error.message || "Failed to update service");
-    }
-  };
-
   const resetForm = () => {
     setTitle("");
     setDescription("");
@@ -220,20 +197,43 @@ const VendorDashboard = () => {
   };
 
   const getStatusBadge = (status: string | null) => {
-    if (status === "published") {
-      return (
-        <Badge variant="success" className="gap-1">
-          <CheckCircle2 className="h-3 w-3" />
-          Published
-        </Badge>
-      );
+    switch (status) {
+      case "approved":
+        return (
+          <Badge variant="success" className="gap-1">
+            <CheckCircle2 className="h-3 w-3" />
+            Approved
+          </Badge>
+        );
+      case "pending":
+        return (
+          <Badge variant="warning" className="gap-1">
+            <AlertCircle className="h-3 w-3" />
+            Pending Approval
+          </Badge>
+        );
+      case "rejected":
+        return (
+          <Badge variant="destructive" className="gap-1">
+            <XCircle className="h-3 w-3" />
+            Rejected
+          </Badge>
+        );
+      case "published":
+        return (
+          <Badge variant="success" className="gap-1">
+            <CheckCircle2 className="h-3 w-3" />
+            Published
+          </Badge>
+        );
+      default:
+        return (
+          <Badge variant="secondary" className="gap-1">
+            <Clock className="h-3 w-3" />
+            Draft
+          </Badge>
+        );
     }
-    return (
-      <Badge variant="secondary" className="gap-1">
-        <Clock className="h-3 w-3" />
-        Draft
-      </Badge>
-    );
   };
 
   return (
@@ -267,7 +267,7 @@ const VendorDashboard = () => {
                 <Button variant="ghost" size="icon">
                   <MessageSquare className="h-5 w-5" />
                 </Button>
-                <Button variant="ghost" size="icon">
+                <Button variant="ghost" size="icon" onClick={() => navigate("/profile")}>
                   <Settings className="h-5 w-5" />
                 </Button>
                 <Button variant="ghost" size="icon" onClick={handleSignOut}>
@@ -339,8 +339,13 @@ const VendorDashboard = () => {
                       step="0.01"
                     />
                   </div>
+                  <p className="text-sm text-muted-foreground">
+                    {editingService 
+                      ? "Update your service details." 
+                      : "Your service will be submitted for admin approval before going live."}
+                  </p>
                   <Button type="submit" className="w-full">
-                    {editingService ? "Update Service" : "Create Service"}
+                    {editingService ? "Update Service" : "Submit for Approval"}
                   </Button>
                 </form>
               </DialogContent>
@@ -427,13 +432,6 @@ const VendorDashboard = () => {
                             )}
                             <Button
                               variant="ghost"
-                              size="sm"
-                              onClick={() => togglePublish(service)}
-                            >
-                              {service.status === "published" ? "Unpublish" : "Publish"}
-                            </Button>
-                            <Button
-                              variant="ghost"
                               size="icon"
                               onClick={() => openEditDialog(service)}
                             >
@@ -498,32 +496,34 @@ const VendorDashboard = () => {
                     Performance
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  <div>
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-sm">Response Rate</span>
-                      <span className="text-sm font-medium">N/A</span>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div>
+                      <div className="flex justify-between text-sm mb-1">
+                        <span className="text-muted-foreground">Profile Views</span>
+                        <span className="font-medium">0</span>
+                      </div>
+                      <div className="h-2 bg-secondary rounded-full overflow-hidden">
+                        <div className="h-full bg-primary rounded-full" style={{ width: "0%" }} />
+                      </div>
                     </div>
-                    <div className="h-2 rounded-full bg-secondary">
-                      <div className="h-2 rounded-full bg-success w-0" />
+                    <div>
+                      <div className="flex justify-between text-sm mb-1">
+                        <span className="text-muted-foreground">Service Clicks</span>
+                        <span className="font-medium">0</span>
+                      </div>
+                      <div className="h-2 bg-secondary rounded-full overflow-hidden">
+                        <div className="h-full bg-accent rounded-full" style={{ width: "0%" }} />
+                      </div>
                     </div>
-                  </div>
-                  <div>
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-sm">Order Completion</span>
-                      <span className="text-sm font-medium">N/A</span>
-                    </div>
-                    <div className="h-2 rounded-full bg-secondary">
-                      <div className="h-2 rounded-full bg-primary w-0" />
-                    </div>
-                  </div>
-                  <div>
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-sm">On-time Delivery</span>
-                      <span className="text-sm font-medium">N/A</span>
-                    </div>
-                    <div className="h-2 rounded-full bg-secondary">
-                      <div className="h-2 rounded-full bg-accent w-0" />
+                    <div>
+                      <div className="flex justify-between text-sm mb-1">
+                        <span className="text-muted-foreground">Conversion Rate</span>
+                        <span className="font-medium">0%</span>
+                      </div>
+                      <div className="h-2 bg-secondary rounded-full overflow-hidden">
+                        <div className="h-full bg-success rounded-full" style={{ width: "0%" }} />
+                      </div>
                     </div>
                   </div>
                 </CardContent>

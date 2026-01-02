@@ -1,75 +1,52 @@
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Star, Heart, Clock, ArrowRight } from "lucide-react";
+import { Star, Heart, ArrowRight, Package } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+
+interface ServiceWithProfile {
+  id: string;
+  title: string;
+  description: string | null;
+  price: number | null;
+  status: string | null;
+  created_at: string;
+  user_id: string;
+  profile?: {
+    full_name: string | null;
+    email: string | null;
+  };
+}
 
 const FeaturedServices = () => {
-  const services = [
-    {
-      id: 1,
-      title: "Professional Website Development",
-      vendor: {
-        name: "Alex Chen",
-        avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop",
-        level: "Top Rated",
-        verified: true,
-      },
-      image: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=500&h=300&fit=crop",
-      price: { from: 499 },
-      rating: 4.9,
-      reviews: 328,
-      deliveryTime: "14 days",
-      category: "Development",
-    },
-    {
-      id: 2,
-      title: "Brand Identity & Logo Design",
-      vendor: {
-        name: "Sarah Miller",
-        avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop",
-        level: "Pro",
-        verified: true,
-      },
-      image: "https://images.unsplash.com/photo-1626785774573-4b799315345d?w=500&h=300&fit=crop",
-      price: { from: 199 },
-      rating: 5.0,
-      reviews: 456,
-      deliveryTime: "5 days",
-      category: "Design",
-    },
-    {
-      id: 3,
-      title: "Cinematic Video Editing",
-      vendor: {
-        name: "Mike Johnson",
-        avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop",
-        level: "Rising Star",
-        verified: false,
-      },
-      image: "https://images.unsplash.com/photo-1574717024653-61fd2cf4d44d?w=500&h=300&fit=crop",
-      price: { from: 149 },
-      rating: 4.8,
-      reviews: 189,
-      deliveryTime: "7 days",
-      category: "Video",
-    },
-    {
-      id: 4,
-      title: "SEO & Digital Marketing Strategy",
-      vendor: {
-        name: "Emma Wilson",
-        avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop",
-        level: "Top Rated",
-        verified: true,
-      },
-      image: "https://images.unsplash.com/photo-1432888622747-4eb9a8f2c293?w=500&h=300&fit=crop",
-      price: { from: 299 },
-      rating: 4.9,
-      reviews: 567,
-      deliveryTime: "10 days",
-      category: "Marketing",
-    },
-  ];
+  const [services, setServices] = useState<ServiceWithProfile[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchServices = async () => {
+      try {
+        const { data, error } = await supabase
+          .from("services")
+          .select(`
+            *,
+            profile:profiles(full_name, email)
+          `)
+          .eq("status", "approved")
+          .order("created_at", { ascending: false })
+          .limit(4);
+
+        if (error) throw error;
+        setServices(data || []);
+      } catch (error) {
+        console.error("Error fetching services:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchServices();
+  }, []);
 
   return (
     <section className="py-20 bg-secondary/30">
@@ -93,78 +70,79 @@ const FeaturedServices = () => {
           </Link>
         </div>
 
-        {/* Services Grid */}
-        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {services.map((service, index) => (
-            <Link
-              key={service.id}
-              to={`/service/${service.id}`}
-              className="group glass-card-hover rounded-2xl overflow-hidden opacity-0 animate-slide-up"
-              style={{ animationDelay: `${index * 0.1}s`, animationFillMode: 'forwards' }}
-            >
-              {/* Image */}
-              <div className="relative aspect-[4/3] overflow-hidden">
-                <img
-                  src={service.image}
-                  alt={service.title}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                />
-                <button className="absolute top-3 right-3 h-8 w-8 rounded-full bg-card/80 backdrop-blur-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-card">
-                  <Heart className="h-4 w-4" />
-                </button>
-                <Badge variant="glass" className="absolute top-3 left-3">
-                  {service.category}
-                </Badge>
-              </div>
-
-              {/* Content */}
-              <div className="p-4">
-                {/* Vendor */}
-                <div className="flex items-center gap-2 mb-3">
-                  <img
-                    src={service.vendor.avatar}
-                    alt={service.vendor.name}
-                    className="h-7 w-7 rounded-full object-cover ring-2 ring-background"
-                  />
-                  <span className="text-sm font-medium">{service.vendor.name}</span>
-                  {service.vendor.verified && (
-                    <Badge variant="verified" className="text-[10px] px-1.5 py-0">
-                      ✓
-                    </Badge>
-                  )}
-                </div>
-
-                {/* Title */}
-                <h3 className="font-semibold text-foreground mb-3 line-clamp-2 group-hover:text-primary transition-colors">
-                  {service.title}
-                </h3>
-
-                {/* Rating */}
-                <div className="flex items-center gap-2 mb-3">
-                  <Star className="h-4 w-4 fill-accent text-accent" />
-                  <span className="font-medium text-sm">{service.rating}</span>
-                  <span className="text-sm text-muted-foreground">
-                    ({service.reviews})
-                  </span>
-                </div>
-
-                {/* Footer */}
-                <div className="flex items-center justify-between pt-3 border-t border-border">
-                  <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                    <Clock className="h-3.5 w-3.5" />
-                    {service.deliveryTime}
-                  </div>
-                  <div className="text-right">
-                    <span className="text-xs text-muted-foreground">From</span>
-                    <p className="font-display font-bold text-lg">
-                      ${service.price.from}
-                    </p>
-                  </div>
-                </div>
-              </div>
+        {/* Loading State */}
+        {loading ? (
+          <div className="flex items-center justify-center py-16">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          </div>
+        ) : services.length === 0 ? (
+          <div className="text-center py-16">
+            <Package className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
+            <h3 className="text-xl font-semibold mb-2">No services available yet</h3>
+            <p className="text-muted-foreground mb-4">
+              Check back soon for new services from our vendors.
+            </p>
+            <Link to="/register">
+              <Button>Become a Vendor</Button>
             </Link>
-          ))}
-        </div>
+          </div>
+        ) : (
+          /* Services Grid */
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {services.map((service, index) => (
+              <div
+                key={service.id}
+                className="group glass-card-hover rounded-2xl overflow-hidden opacity-0 animate-slide-up"
+                style={{ animationDelay: `${index * 0.1}s`, animationFillMode: 'forwards' }}
+              >
+                {/* Image Placeholder */}
+                <div className="relative aspect-[4/3] overflow-hidden bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center">
+                  <Package className="h-12 w-12 text-muted-foreground" />
+                  <button className="absolute top-3 right-3 h-8 w-8 rounded-full bg-card/80 backdrop-blur-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-card">
+                    <Heart className="h-4 w-4" />
+                  </button>
+                </div>
+
+                {/* Content */}
+                <div className="p-4">
+                  {/* Vendor */}
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="h-7 w-7 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center text-xs font-semibold ring-2 ring-background">
+                      {service.profile?.full_name?.charAt(0) || "?"}
+                    </div>
+                    <span className="text-sm font-medium">
+                      {service.profile?.full_name || "Unknown Vendor"}
+                    </span>
+                  </div>
+
+                  {/* Title */}
+                  <h3 className="font-semibold text-foreground mb-3 line-clamp-2 group-hover:text-primary transition-colors">
+                    {service.title}
+                  </h3>
+
+                  {/* Rating */}
+                  <div className="flex items-center gap-2 mb-3">
+                    <Star className="h-4 w-4 fill-warning text-warning" />
+                    <span className="font-medium text-sm">New</span>
+                  </div>
+
+                  {/* Footer */}
+                  <div className="flex items-center justify-between pt-3 border-t border-border">
+                    <span className="text-sm text-muted-foreground">
+                      {service.description?.slice(0, 30) || "Quality service"}...
+                    </span>
+                    <div className="text-right">
+                      <span className="text-xs text-muted-foreground">From</span>
+                      <p className="font-display font-bold text-lg">
+                        ${service.price || 0}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </section>
   );

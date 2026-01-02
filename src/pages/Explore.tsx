@@ -1,6 +1,6 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Helmet } from "react-helmet-async";
-import { Link, useSearchParams, useNavigate } from "react-router-dom";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
@@ -19,11 +19,29 @@ import {
   Star,
   Heart,
   Clock,
-  MapPin,
   ArrowLeft,
   X,
+  Package,
 } from "lucide-react";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+
+interface ServiceWithProfile {
+  id: string;
+  title: string;
+  description: string | null;
+  price: number | null;
+  status: string | null;
+  created_at: string;
+  user_id: string;
+  profile?: {
+    full_name: string | null;
+    email: string | null;
+  };
+  category?: {
+    name: string;
+  };
+}
 
 const Explore = () => {
   const navigate = useNavigate();
@@ -33,179 +51,43 @@ const Explore = () => {
   const [sortBy, setSortBy] = useState("recommended");
   const [priceMin, setPriceMin] = useState("");
   const [priceMax, setPriceMax] = useState("");
-  const [deliveryFilter, setDeliveryFilter] = useState("Any");
-  const [vendorLevels, setVendorLevels] = useState<string[]>([]);
-  const [favorites, setFavorites] = useState<number[]>([]);
+  const [favorites, setFavorites] = useState<string[]>([]);
+  const [services, setServices] = useState<ServiceWithProfile[]>([]);
+  const [loading, setLoading] = useState(true);
 
   const activeCategory = searchParams.get("category") || "All";
 
-  const allServices = [
-    {
-      id: 1,
-      title: "Professional Website Development with React & Node.js",
-      vendor: {
-        name: "Alex Chen",
-        avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop",
-        level: "Top Rated",
-        verified: true,
-        location: "San Francisco, US",
-      },
-      image: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=500&h=300&fit=crop",
-      price: { from: 499 },
-      rating: 4.9,
-      reviews: 328,
-      deliveryTime: "14 days",
-      deliveryDays: 14,
-      category: "Development",
-    },
-    {
-      id: 2,
-      title: "Complete Brand Identity & Logo Design Package",
-      vendor: {
-        name: "Sarah Miller",
-        avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop",
-        level: "Pro",
-        verified: true,
-        location: "London, UK",
-      },
-      image: "https://images.unsplash.com/photo-1626785774573-4b799315345d?w=500&h=300&fit=crop",
-      price: { from: 199 },
-      rating: 5.0,
-      reviews: 456,
-      deliveryTime: "5 days",
-      deliveryDays: 5,
-      category: "Design",
-    },
-    {
-      id: 3,
-      title: "Cinematic Video Editing & Post Production",
-      vendor: {
-        name: "Mike Johnson",
-        avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop",
-        level: "Rising Star",
-        verified: false,
-        location: "Los Angeles, US",
-      },
-      image: "https://images.unsplash.com/photo-1574717024653-61fd2cf4d44d?w=500&h=300&fit=crop",
-      price: { from: 149 },
-      rating: 4.8,
-      reviews: 189,
-      deliveryTime: "7 days",
-      deliveryDays: 7,
-      category: "Video",
-    },
-    {
-      id: 4,
-      title: "SEO & Digital Marketing Strategy",
-      vendor: {
-        name: "Emma Wilson",
-        avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop",
-        level: "Top Rated",
-        verified: true,
-        location: "Toronto, CA",
-      },
-      image: "https://images.unsplash.com/photo-1432888622747-4eb9a8f2c293?w=500&h=300&fit=crop",
-      price: { from: 299 },
-      rating: 4.9,
-      reviews: 567,
-      deliveryTime: "10 days",
-      deliveryDays: 10,
-      category: "Marketing",
-    },
-    {
-      id: 5,
-      title: "Professional Voice Over for Commercials",
-      vendor: {
-        name: "James Brown",
-        avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&h=100&fit=crop",
-        level: "Pro",
-        verified: true,
-        location: "New York, US",
-      },
-      image: "https://images.unsplash.com/photo-1478737270239-2f02b77fc618?w=500&h=300&fit=crop",
-      price: { from: 75 },
-      rating: 4.7,
-      reviews: 234,
-      deliveryTime: "3 days",
-      deliveryDays: 3,
-      category: "Audio",
-    },
-    {
-      id: 6,
-      title: "Mobile App UI/UX Design",
-      vendor: {
-        name: "Lisa Park",
-        avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop",
-        level: "Top Rated",
-        verified: true,
-        location: "Seoul, KR",
-      },
-      image: "https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?w=500&h=300&fit=crop",
-      price: { from: 350 },
-      rating: 5.0,
-      reviews: 412,
-      deliveryTime: "7 days",
-      deliveryDays: 7,
-      category: "Design",
-    },
-    {
-      id: 7,
-      title: "Professional Blog Writing & Content Creation",
-      vendor: {
-        name: "Emily Rose",
-        avatar: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100&h=100&fit=crop",
-        level: "Pro",
-        verified: true,
-        location: "Austin, US",
-      },
-      image: "https://images.unsplash.com/photo-1455390582262-044cdead277a?w=500&h=300&fit=crop",
-      price: { from: 50 },
-      rating: 4.8,
-      reviews: 312,
-      deliveryTime: "2 days",
-      deliveryDays: 2,
-      category: "Writing",
-    },
-    {
-      id: 8,
-      title: "4K Video Production & Filming",
-      vendor: {
-        name: "David Kim",
-        avatar: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=100&h=100&fit=crop",
-        level: "Top Rated",
-        verified: true,
-        location: "Miami, US",
-      },
-      image: "https://images.unsplash.com/photo-1492691527719-9d1e07e534b4?w=500&h=300&fit=crop",
-      price: { from: 599 },
-      rating: 4.9,
-      reviews: 178,
-      deliveryTime: "21 days",
-      deliveryDays: 21,
-      category: "Video",
-    },
-  ];
+  // Fetch approved services from database
+  useEffect(() => {
+    const fetchServices = async () => {
+      setLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from("services")
+          .select(`
+            *,
+            profile:profiles(full_name, email)
+          `)
+          .eq("status", "approved")
+          .order("created_at", { ascending: false });
 
-  const categories = [
-    "All",
-    "Development",
-    "Design",
-    "Marketing",
-    "Video",
-    "Writing",
-    "Audio",
-  ];
+        if (error) throw error;
+        setServices(data || []);
+      } catch (error) {
+        console.error("Error fetching services:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  const deliveryOptions = ["24 hours", "3 days", "7 days", "14 days", "Any"];
+    fetchServices();
+  }, []);
+
+  const categories = ["All", "Development", "Design", "Marketing", "Video", "Writing", "Audio"];
 
   // Filter and sort services
   const filteredServices = useMemo(() => {
-    let result = [...allServices];
-
-    // Filter by category
-    if (activeCategory !== "All") {
-      result = result.filter((s) => s.category === activeCategory);
-    }
+    let result = [...services];
 
     // Filter by search query
     if (searchQuery) {
@@ -213,50 +95,36 @@ const Explore = () => {
       result = result.filter(
         (s) =>
           s.title.toLowerCase().includes(query) ||
-          s.vendor.name.toLowerCase().includes(query) ||
-          s.category.toLowerCase().includes(query)
+          s.profile?.full_name?.toLowerCase().includes(query) ||
+          s.description?.toLowerCase().includes(query)
       );
     }
 
     // Filter by price range
     if (priceMin) {
-      result = result.filter((s) => s.price.from >= parseInt(priceMin));
+      result = result.filter((s) => (s.price || 0) >= parseInt(priceMin));
     }
     if (priceMax) {
-      result = result.filter((s) => s.price.from <= parseInt(priceMax));
-    }
-
-    // Filter by delivery time
-    if (deliveryFilter !== "Any") {
-      const days = parseInt(deliveryFilter);
-      result = result.filter((s) => s.deliveryDays <= days);
-    }
-
-    // Filter by vendor level
-    if (vendorLevels.length > 0) {
-      result = result.filter((s) => vendorLevels.includes(s.vendor.level));
+      result = result.filter((s) => (s.price || 0) <= parseInt(priceMax));
     }
 
     // Sort
     switch (sortBy) {
       case "newest":
-        result = result.reverse();
-        break;
-      case "rating":
-        result = result.sort((a, b) => b.rating - a.rating);
+        result = result.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
         break;
       case "price-low":
-        result = result.sort((a, b) => a.price.from - b.price.from);
+        result = result.sort((a, b) => (a.price || 0) - (b.price || 0));
         break;
       case "price-high":
-        result = result.sort((a, b) => b.price.from - a.price.from);
+        result = result.sort((a, b) => (b.price || 0) - (a.price || 0));
         break;
       default:
         break;
     }
 
     return result;
-  }, [activeCategory, searchQuery, priceMin, priceMax, deliveryFilter, vendorLevels, sortBy]);
+  }, [services, searchQuery, priceMin, priceMax, sortBy]);
 
   const handleCategoryChange = (category: string) => {
     if (category === "All") {
@@ -277,13 +145,7 @@ const Explore = () => {
     setSearchParams(searchParams);
   };
 
-  const handleVendorLevelToggle = (level: string) => {
-    setVendorLevels((prev) =>
-      prev.includes(level) ? prev.filter((l) => l !== level) : [...prev, level]
-    );
-  };
-
-  const handleFavorite = (e: React.MouseEvent, serviceId: number) => {
+  const handleFavorite = (e: React.MouseEvent, serviceId: string) => {
     e.preventDefault();
     e.stopPropagation();
     setFavorites((prev) =>
@@ -299,8 +161,6 @@ const Explore = () => {
   const clearFilters = () => {
     setPriceMin("");
     setPriceMax("");
-    setDeliveryFilter("Any");
-    setVendorLevels([]);
     setSearchQuery("");
     searchParams.delete("q");
     searchParams.delete("category");
@@ -317,7 +177,7 @@ const Explore = () => {
         </title>
         <meta
           name="description"
-          content="Browse thousands of professional services from verified vendors. Find the perfect match for your project needs."
+          content="Browse professional services from verified vendors. Find the perfect match for your project needs."
         />
       </Helmet>
       <div className="min-h-screen flex flex-col">
@@ -389,7 +249,6 @@ const Explore = () => {
                     <SelectContent>
                       <SelectItem value="recommended">Recommended</SelectItem>
                       <SelectItem value="newest">Newest</SelectItem>
-                      <SelectItem value="rating">Highest Rated</SelectItem>
                       <SelectItem value="price-low">Price: Low to High</SelectItem>
                       <SelectItem value="price-high">Price: High to Low</SelectItem>
                     </SelectContent>
@@ -441,21 +300,6 @@ const Explore = () => {
                         />
                       </div>
                     </div>
-                    <div>
-                      <h4 className="text-sm font-medium mb-2">Delivery Time</h4>
-                      <Select value={deliveryFilter} onValueChange={setDeliveryFilter}>
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {deliveryOptions.map((opt) => (
-                            <SelectItem key={opt} value={opt === "Any" ? "Any" : opt.split(" ")[0]}>
-                              {opt}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
                     <Button variant="outline" className="w-full" onClick={clearFilters}>
                       Clear All Filters
                     </Button>
@@ -491,49 +335,8 @@ const Explore = () => {
                     </div>
                   </div>
 
-                  <div>
-                    <h3 className="font-semibold mb-3">Delivery Time</h3>
-                    <div className="space-y-2">
-                      {deliveryOptions.map((time) => (
-                        <label key={time} className="flex items-center gap-2 cursor-pointer">
-                          <input
-                            type="radio"
-                            name="delivery"
-                            className="accent-primary"
-                            checked={
-                              time === "Any"
-                                ? deliveryFilter === "Any"
-                                : deliveryFilter === time.split(" ")[0]
-                            }
-                            onChange={() =>
-                              setDeliveryFilter(time === "Any" ? "Any" : time.split(" ")[0])
-                            }
-                          />
-                          <span className="text-sm">{time}</span>
-                        </label>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div>
-                    <h3 className="font-semibold mb-3">Vendor Level</h3>
-                    <div className="space-y-2">
-                      {["Top Rated", "Pro", "Rising Star", "New"].map((level) => (
-                        <label key={level} className="flex items-center gap-2 cursor-pointer">
-                          <input
-                            type="checkbox"
-                            className="accent-primary"
-                            checked={vendorLevels.includes(level)}
-                            onChange={() => handleVendorLevelToggle(level)}
-                          />
-                          <span className="text-sm">{level}</span>
-                        </label>
-                      ))}
-                    </div>
-                  </div>
-
                   <Button variant="outline" className="w-full" onClick={clearFilters}>
-                    Clear Filters
+                    Clear All Filters
                   </Button>
                 </div>
               </aside>
@@ -542,126 +345,87 @@ const Explore = () => {
               <div className="flex-1">
                 <div className="flex items-center justify-between mb-6">
                   <p className="text-muted-foreground">
-                    <span className="font-semibold text-foreground">{filteredServices.length}</span>{" "}
-                    services found
+                    {filteredServices.length} services found
                   </p>
                 </div>
 
-                {filteredServices.length === 0 ? (
+                {loading ? (
+                  <div className="flex items-center justify-center py-16">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                  </div>
+                ) : filteredServices.length === 0 ? (
                   <div className="text-center py-16">
-                    <p className="text-muted-foreground text-lg mb-4">No services found matching your criteria</p>
-                    <Button variant="outline" onClick={clearFilters}>
-                      Clear Filters
-                    </Button>
+                    <Package className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
+                    <h3 className="text-xl font-semibold mb-2">No services found</h3>
+                    <p className="text-muted-foreground mb-4">
+                      Try adjusting your filters or search query
+                    </p>
+                    <Button onClick={clearFilters}>Clear Filters</Button>
                   </div>
                 ) : (
                   <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-6">
-                    {filteredServices.map((service, index) => (
-                      <Link
+                    {filteredServices.map((service) => (
+                      <div
                         key={service.id}
-                        to={`/service/${service.id}`}
-                        className="group glass-card-hover rounded-2xl overflow-hidden opacity-0 animate-slide-up"
-                        style={{
-                          animationDelay: `${index * 0.05}s`,
-                          animationFillMode: "forwards",
-                        }}
+                        className="group glass-card-hover rounded-2xl overflow-hidden cursor-pointer"
                       >
-                        {/* Image */}
-                        <div className="relative aspect-[4/3] overflow-hidden">
-                          <img
-                            src={service.image}
-                            alt={service.title}
-                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                          />
+                        {/* Service Image Placeholder */}
+                        <div className="relative aspect-[4/3] bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center">
+                          <Package className="h-12 w-12 text-muted-foreground" />
                           <button
                             onClick={(e) => handleFavorite(e, service.id)}
-                            className={`absolute top-3 right-3 h-8 w-8 rounded-full backdrop-blur-sm flex items-center justify-center transition-all hover:scale-110 ${
+                            className={`absolute top-3 right-3 h-9 w-9 rounded-full flex items-center justify-center transition-all ${
                               favorites.includes(service.id)
-                                ? "bg-accent text-accent-foreground"
-                                : "bg-card/80 opacity-0 group-hover:opacity-100"
+                                ? "bg-destructive text-destructive-foreground"
+                                : "bg-card/80 backdrop-blur-sm text-muted-foreground hover:text-destructive"
                             }`}
                           >
                             <Heart
-                              className={`h-4 w-4 ${
-                                favorites.includes(service.id) ? "fill-current" : ""
-                              }`}
+                              className={`h-5 w-5 ${favorites.includes(service.id) ? "fill-current" : ""}`}
                             />
                           </button>
-                          <Badge variant="glass" className="absolute top-3 left-3">
-                            {service.category}
-                          </Badge>
                         </div>
 
                         {/* Content */}
                         <div className="p-4">
-                          {/* Vendor */}
-                          <div className="flex items-center gap-2 mb-3">
-                            <img
-                              src={service.vendor.avatar}
-                              alt={service.vendor.name}
-                              className="h-7 w-7 rounded-full object-cover ring-2 ring-background"
-                            />
+                          {/* Vendor Info */}
+                          <div className="flex items-center gap-3 mb-3">
+                            <div className="h-10 w-10 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center text-sm font-semibold">
+                              {service.profile?.full_name?.charAt(0) || "?"}
+                            </div>
                             <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-1">
-                                <span className="text-sm font-medium truncate">
-                                  {service.vendor.name}
-                                </span>
-                                {service.vendor.verified && (
-                                  <Badge variant="verified" className="text-[10px] px-1.5 py-0">
-                                    ✓
-                                  </Badge>
-                                )}
-                              </div>
-                              <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                                <MapPin className="h-3 w-3" />
-                                {service.vendor.location}
-                              </div>
+                              <p className="font-medium truncate text-sm">
+                                {service.profile?.full_name || "Unknown Vendor"}
+                              </p>
                             </div>
                           </div>
 
                           {/* Title */}
-                          <h3 className="font-semibold text-foreground mb-3 line-clamp-2 group-hover:text-primary transition-colors">
+                          <h3 className="font-semibold mb-2 line-clamp-2 group-hover:text-primary transition-colors">
                             {service.title}
                           </h3>
 
-                          {/* Rating */}
-                          <div className="flex items-center gap-2 mb-3">
-                            <Star className="h-4 w-4 fill-accent text-accent" />
-                            <span className="font-medium text-sm">{service.rating}</span>
-                            <span className="text-sm text-muted-foreground">
-                              ({service.reviews})
-                            </span>
-                          </div>
+                          {/* Description */}
+                          <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
+                            {service.description || "No description provided"}
+                          </p>
 
                           {/* Footer */}
                           <div className="flex items-center justify-between pt-3 border-t border-border">
-                            <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                              <Clock className="h-3.5 w-3.5" />
-                              {service.deliveryTime}
+                            <div className="flex items-center gap-1">
+                              <Star className="h-4 w-4 fill-warning text-warning" />
+                              <span className="font-medium text-sm">New</span>
                             </div>
                             <div className="text-right">
-                              <span className="text-xs text-muted-foreground">From</span>
+                              <p className="text-xs text-muted-foreground">Starting at</p>
                               <p className="font-display font-bold text-lg">
-                                ${service.price.from}
+                                ${service.price || 0}
                               </p>
                             </div>
                           </div>
                         </div>
-                      </Link>
+                      </div>
                     ))}
-                  </div>
-                )}
-
-                {/* Load More */}
-                {filteredServices.length > 0 && (
-                  <div className="mt-12 text-center">
-                    <Button
-                      variant="outline"
-                      size="lg"
-                      onClick={() => toast.info("More services will be loaded from the database")}
-                    >
-                      Load More Services
-                    </Button>
                   </div>
                 )}
               </div>
