@@ -24,11 +24,15 @@ export function UserRoleManager({
   userId,
   currentRoles,
   onRolesUpdated,
-}: UserRoleManagerProps) {
+  canManageSuperAdmin = false,
+}: UserRoleManagerProps & { canManageSuperAdmin?: boolean }) {
   const [selectedRole, setSelectedRole] = useState<AppRole | "">("");
   const [loading, setLoading] = useState(false);
 
-  const allRoles: AppRole[] = ["buyer", "vendor", "admin", "super_admin"];
+  // Only super_admin can assign super_admin role
+  const allRoles: AppRole[] = canManageSuperAdmin 
+    ? ["buyer", "vendor", "admin", "super_admin"]
+    : ["buyer", "vendor", "admin"];
   const availableRoles = allRoles.filter((role) => !currentRoles.includes(role));
 
   const addRole = async () => {
@@ -54,6 +58,12 @@ export function UserRoleManager({
   };
 
   const removeRole = async (role: AppRole) => {
+    // Prevent non-super-admins from removing super_admin role
+    if (role === "super_admin" && !canManageSuperAdmin) {
+      toast.error("Only super admins can remove the super_admin role");
+      return;
+    }
+    
     setLoading(true);
     try {
       const { error } = await supabase
