@@ -57,7 +57,7 @@ interface UserWithRoles {
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
-  const { user, signOut, isSuperAdmin, profile } = useAuth();
+  const { user, signOut, isSuperAdmin, isAdmin, profile } = useAuth();
   const [users, setUsers] = useState<UserWithRoles[]>([]);
   const [loading, setLoading] = useState(true);
   const [expandedUserId, setExpandedUserId] = useState<string | null>(null);
@@ -371,28 +371,34 @@ const AdminDashboard = () => {
                                   <span className="text-sm text-muted-foreground hidden sm:block">
                                     {formatDate(u.created_at)}
                                   </span>
-                                  {isSuperAdmin && (
+                                {(isSuperAdmin || isAdmin) && (
                                     <div className="flex items-center gap-2">
-                                      <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          handleEditUser(u);
-                                        }}
-                                      >
-                                        <Pencil className="h-4 w-4" />
-                                      </Button>
-                                      <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          handleDeleteUser(u.id);
-                                        }}
-                                      >
-                                        <Trash2 className="h-4 w-4 text-destructive" />
-                                      </Button>
+                                      {(isSuperAdmin || (isAdmin && !u.roles.includes("super_admin"))) && (
+                                        <>
+                                          <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              handleEditUser(u);
+                                            }}
+                                          >
+                                            <Pencil className="h-4 w-4" />
+                                          </Button>
+                                          {isSuperAdmin && (
+                                            <Button
+                                              variant="ghost"
+                                              size="icon"
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                handleDeleteUser(u.id);
+                                              }}
+                                            >
+                                              <Trash2 className="h-4 w-4 text-destructive" />
+                                            </Button>
+                                          )}
+                                        </>
+                                      )}
                                       {expandedUserId === u.id ? (
                                         <ChevronUp className="h-4 w-4" />
                                       ) : (
@@ -403,13 +409,14 @@ const AdminDashboard = () => {
                                 </div>
                               </div>
 
-                              {isSuperAdmin && expandedUserId === u.id && (
+                              {(isSuperAdmin || (isAdmin && !u.roles.includes("super_admin"))) && expandedUserId === u.id && (
                                 <div className="mt-4 pt-4 border-t border-border">
                                   <p className="text-sm font-medium mb-2">Manage Roles:</p>
                                   <UserRoleManager
                                     userId={u.id}
                                     currentRoles={u.roles}
                                     onRolesUpdated={fetchUsers}
+                                    canManageSuperAdmin={isSuperAdmin}
                                   />
                                 </div>
                               )}
