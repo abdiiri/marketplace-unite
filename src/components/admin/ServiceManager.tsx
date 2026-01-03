@@ -33,6 +33,7 @@ interface Service {
   status: string | null;
   user_id: string;
   created_at: string;
+  images: string[] | null;
   profile?: {
     full_name: string | null;
     email: string | null;
@@ -224,7 +225,20 @@ export function ServiceManager() {
       key={service.id}
       className="p-4 rounded-xl bg-secondary/50 hover:bg-secondary transition-colors"
     >
-      <div className="flex items-start justify-between gap-4">
+      <div className="flex items-start gap-4">
+        {/* Service Image */}
+        <div className="h-16 w-16 rounded-lg bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center overflow-hidden flex-shrink-0">
+          {service.images && service.images.length > 0 ? (
+            <img 
+              src={service.images[0]} 
+              alt={service.title}
+              className="h-full w-full object-cover"
+            />
+          ) : (
+            <div className="text-xs text-muted-foreground">No img</div>
+          )}
+        </div>
+        
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap mb-1">
             <p className="font-medium truncate">{service.title}</p>
@@ -239,6 +253,12 @@ export function ServiceManager() {
             <span>{service.profile?.email || "No email"}</span>
             <span>•</span>
             <span>ID: {service.user_id.slice(0, 8)}...</span>
+            {service.images && service.images.length > 0 && (
+              <>
+                <span>•</span>
+                <span>{service.images.length} image(s)</span>
+              </>
+            )}
           </div>
           {service.price && (
             <p className="text-sm font-semibold text-primary mt-1">${service.price}</p>

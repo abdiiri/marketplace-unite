@@ -34,9 +34,11 @@ interface ServiceWithProfile {
   status: string | null;
   created_at: string;
   user_id: string;
+  images: string[] | null;
   profile?: {
     full_name: string | null;
     email: string | null;
+    avatar_url: string | null;
   };
   category?: {
     name: string;
@@ -66,7 +68,7 @@ const Explore = () => {
           .from("services")
           .select(`
             *,
-            profile:profiles(full_name, email)
+            profile:profiles(full_name, email, avatar_url)
           `)
           .eq("status", "approved")
           .order("created_at", { ascending: false });
@@ -369,9 +371,17 @@ const Explore = () => {
                         key={service.id}
                         className="group glass-card-hover rounded-2xl overflow-hidden cursor-pointer"
                       >
-                        {/* Service Image Placeholder */}
-                        <div className="relative aspect-[4/3] bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center">
-                          <Package className="h-12 w-12 text-muted-foreground" />
+                        {/* Service Image */}
+                        <div className="relative aspect-[4/3] bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center overflow-hidden">
+                          {service.images && service.images.length > 0 ? (
+                            <img 
+                              src={service.images[0]} 
+                              alt={service.title}
+                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                            />
+                          ) : (
+                            <Package className="h-12 w-12 text-muted-foreground" />
+                          )}
                           <button
                             onClick={(e) => handleFavorite(e, service.id)}
                             className={`absolute top-3 right-3 h-9 w-9 rounded-full flex items-center justify-center transition-all ${
@@ -390,8 +400,12 @@ const Explore = () => {
                         <div className="p-4">
                           {/* Vendor Info */}
                           <div className="flex items-center gap-3 mb-3">
-                            <div className="h-10 w-10 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center text-sm font-semibold">
-                              {service.profile?.full_name?.charAt(0) || "?"}
+                            <div className="h-10 w-10 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center text-sm font-semibold overflow-hidden">
+                              {service.profile?.avatar_url ? (
+                                <img src={service.profile.avatar_url} alt="" className="h-full w-full object-cover" />
+                              ) : (
+                                service.profile?.full_name?.charAt(0) || "?"
+                              )}
                             </div>
                             <div className="flex-1 min-w-0">
                               <p className="font-medium truncate text-sm">

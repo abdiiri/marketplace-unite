@@ -13,9 +13,11 @@ interface ServiceWithProfile {
   status: string | null;
   created_at: string;
   user_id: string;
+  images: string[] | null;
   profile?: {
     full_name: string | null;
     email: string | null;
+    avatar_url: string | null;
   };
 }
 
@@ -30,7 +32,7 @@ const FeaturedServices = () => {
           .from("services")
           .select(`
             *,
-            profile:profiles(full_name, email)
+            profile:profiles(full_name, email, avatar_url)
           `)
           .eq("status", "approved")
           .order("created_at", { ascending: false })
@@ -95,9 +97,17 @@ const FeaturedServices = () => {
                 className="group glass-card-hover rounded-2xl overflow-hidden opacity-0 animate-slide-up"
                 style={{ animationDelay: `${index * 0.1}s`, animationFillMode: 'forwards' }}
               >
-                {/* Image Placeholder */}
+                {/* Image */}
                 <div className="relative aspect-[4/3] overflow-hidden bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center">
-                  <Package className="h-12 w-12 text-muted-foreground" />
+                  {service.images && service.images.length > 0 ? (
+                    <img 
+                      src={service.images[0]} 
+                      alt={service.title}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
+                  ) : (
+                    <Package className="h-12 w-12 text-muted-foreground" />
+                  )}
                   <button className="absolute top-3 right-3 h-8 w-8 rounded-full bg-card/80 backdrop-blur-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-card">
                     <Heart className="h-4 w-4" />
                   </button>
@@ -107,8 +117,12 @@ const FeaturedServices = () => {
                 <div className="p-4">
                   {/* Vendor */}
                   <div className="flex items-center gap-2 mb-3">
-                    <div className="h-7 w-7 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center text-xs font-semibold ring-2 ring-background">
-                      {service.profile?.full_name?.charAt(0) || "?"}
+                    <div className="h-7 w-7 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center text-xs font-semibold ring-2 ring-background overflow-hidden">
+                      {service.profile?.avatar_url ? (
+                        <img src={service.profile.avatar_url} alt="" className="h-full w-full object-cover" />
+                      ) : (
+                        service.profile?.full_name?.charAt(0) || "?"
+                      )}
                     </div>
                     <span className="text-sm font-medium">
                       {service.profile?.full_name || "Unknown Vendor"}

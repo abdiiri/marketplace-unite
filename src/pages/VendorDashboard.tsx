@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Helmet } from "react-helmet-async";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/hooks/useAuth";
+import { useImageUpload } from "@/hooks/useImageUpload";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import {
@@ -36,6 +37,8 @@ import {
   Pencil,
   Trash2,
   Star,
+  ImagePlus,
+  X,
 } from "lucide-react";
 import omtiiLogo from "@/assets/omtii-logo.png";
 
@@ -46,6 +49,7 @@ interface Service {
   price: number | null;
   status: string | null;
   created_at: string;
+  images: string[] | null;
 }
 
 const VendorDashboard = () => {
@@ -60,6 +64,12 @@ const VendorDashboard = () => {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [price, setPrice] = useState("");
+  const [imageFiles, setImageFiles] = useState<File[]>([]);
+  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+  const [existingImages, setExistingImages] = useState<string[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  const { uploadMultipleImages, uploading } = useImageUpload({ bucket: "service-images" });
 
   const stats = [
     {
@@ -116,11 +126,46 @@ const VendorDashboard = () => {
     fetchServices();
   }, [user]);
 
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files) return;
+    
+    const newFiles = Array.from(files);
+    setImageFiles(prev => [...prev, ...newFiles]);
+    
+    // Create previews
+    newFiles.forEach(file => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setImagePreviews(prev => [...prev, e.target?.result as string]);
+      };
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const removeImage = (index: number) => {
+    setImageFiles(prev => prev.filter((_, i) => i !== index));
+    setImagePreviews(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const removeExistingImage = (index: number) => {
+    setExistingImages(prev => prev.filter((_, i) => i !== index));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
 
     try {
+      // Upload new images if any
+      let uploadedUrls: string[] = [];
+      if (imageFiles.length > 0) {
+        uploadedUrls = await uploadMultipleImages(imageFiles, user.id);
+      }
+      
+      // Combine existing and new images
+      const allImages = [...existingImages, ...uploadedUrls];
+
       if (editingService) {
         // Update existing service
         const { error } = await supabase
@@ -129,6 +174,7 @@ const VendorDashboard = () => {
             title,
             description,
             price: price ? parseFloat(price) : null,
+            images: allImages.length > 0 ? allImages : null,
           })
           .eq("id", editingService.id)
           .eq("user_id", user.id);
@@ -143,6 +189,7 @@ const VendorDashboard = () => {
           description,
           price: price ? parseFloat(price) : null,
           status: "pending",
+          images: allImages.length > 0 ? allImages : null,
         });
 
         if (error) throw error;
@@ -180,6 +227,9 @@ const VendorDashboard = () => {
     setTitle("");
     setDescription("");
     setPrice("");
+    setImageFiles([]);
+    setImagePreviews([]);
+    setExistingImages([]);
     setEditingService(null);
   };
 
@@ -188,6 +238,9 @@ const VendorDashboard = () => {
     setTitle(service.title);
     setDescription(service.description || "");
     setPrice(service.price?.toString() || "");
+    setExistingImages(service.images || []);
+    setImageFiles([]);
+    setImagePreviews([]);
     setIsDialogOpen(true);
   };
 
@@ -273,8 +326,12 @@ const VendorDashboard = () => {
                 <Button variant="ghost" size="icon" onClick={handleSignOut}>
                   <LogOut className="h-5 w-5" />
                 </Button>
-                <div className="h-9 w-9 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-primary-foreground font-semibold text-sm">
-                  {profile?.full_name?.charAt(0) || "V"}
+                <div className="h-9 w-9 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-primary-foreground font-semibold text-sm overflow-hidden">
+                  {(profile as any)?.avatar_url ? (
+                    <img src={(profile as any).avatar_url} alt="" className="h-full w-full object-cover" />
+                  ) : (
+                    profile?.full_name?.charAt(0) || "V"
+                  )}
                 </div>
               </div>
             </div>
@@ -339,13 +396,82 @@ const VendorDashboard = () => {
                       step="0.01"
                     />
                   </div>
+                  
+                  {/* Image Upload */}
+                  <div>
+                    <Label>Service Images</Label>
+                    <div className="mt-2 space-y-3">
+                      {/* Existing Images */}
+                      {existingImages.length > 0 && (
+                        <div className="flex flex-wrap gap-2">
+                          {existingImages.map((url, index) => (
+                            <div key={index} className="relative">
+                              <img
+                                src={url}
+                                alt={`Service ${index + 1}`}
+                                className="h-16 w-16 object-cover rounded-lg"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => removeExistingImage(index)}
+                                className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center"
+                              >
+                                <X className="h-3 w-3" />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      
+                      {/* New Image Previews */}
+                      {imagePreviews.length > 0 && (
+                        <div className="flex flex-wrap gap-2">
+                          {imagePreviews.map((preview, index) => (
+                            <div key={index} className="relative">
+                              <img
+                                src={preview}
+                                alt={`Preview ${index + 1}`}
+                                className="h-16 w-16 object-cover rounded-lg"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => removeImage(index)}
+                                className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center"
+                              >
+                                <X className="h-3 w-3" />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        onChange={handleImageSelect}
+                        className="hidden"
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => fileInputRef.current?.click()}
+                        className="gap-2"
+                      >
+                        <ImagePlus className="h-4 w-4" />
+                        Add Images
+                      </Button>
+                    </div>
+                  </div>
+                  
                   <p className="text-sm text-muted-foreground">
                     {editingService 
                       ? "Update your service details." 
                       : "Your service will be submitted for admin approval before going live."}
                   </p>
-                  <Button type="submit" className="w-full">
-                    {editingService ? "Update Service" : "Submit for Approval"}
+                  <Button type="submit" className="w-full" disabled={uploading}>
+                    {uploading ? "Uploading..." : editingService ? "Update Service" : "Submit for Approval"}
                   </Button>
                 </form>
               </DialogContent>
@@ -415,8 +541,21 @@ const VendorDashboard = () => {
                       {services.map((service) => (
                         <div
                           key={service.id}
-                          className="flex items-center justify-between p-4 rounded-xl bg-secondary/50 hover:bg-secondary transition-colors"
+                          className="flex items-start gap-4 p-4 rounded-xl bg-secondary/50 hover:bg-secondary transition-colors"
                         >
+                          {/* Service Image */}
+                          <div className="h-16 w-16 rounded-lg bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center overflow-hidden flex-shrink-0">
+                            {service.images && service.images.length > 0 ? (
+                              <img 
+                                src={service.images[0]} 
+                                alt={service.title}
+                                className="h-full w-full object-cover"
+                              />
+                            ) : (
+                              <Package className="h-6 w-6 text-muted-foreground" />
+                            )}
+                          </div>
+                          
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 flex-wrap">
                               <p className="font-medium truncate">{service.title}</p>
@@ -425,8 +564,13 @@ const VendorDashboard = () => {
                             <p className="text-sm text-muted-foreground truncate">
                               {service.description || "No description"}
                             </p>
+                            {service.images && service.images.length > 1 && (
+                              <p className="text-xs text-muted-foreground mt-1">
+                                +{service.images.length - 1} more images
+                              </p>
+                            )}
                           </div>
-                          <div className="flex items-center gap-2 ml-4">
+                          <div className="flex items-center gap-2 flex-shrink-0">
                             {service.price && (
                               <span className="font-display font-bold">${service.price}</span>
                             )}
