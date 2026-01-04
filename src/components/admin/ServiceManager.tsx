@@ -74,6 +74,20 @@ export function ServiceManager() {
 
   useEffect(() => {
     fetchServices();
+
+    // Subscribe to realtime updates
+    const channel = supabase
+      .channel('admin-services')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'services' },
+        () => fetchServices()
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   const handleEdit = (service: Service) => {
