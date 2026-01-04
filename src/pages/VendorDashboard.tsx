@@ -124,6 +124,22 @@ const VendorDashboard = () => {
 
   useEffect(() => {
     fetchServices();
+
+    if (!user) return;
+
+    // Subscribe to realtime updates for vendor's services
+    const channel = supabase
+      .channel('vendor-services')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'services', filter: `user_id=eq.${user.id}` },
+        () => fetchServices()
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [user]);
 
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
