@@ -374,7 +374,7 @@ const VendorDashboard = () => {
                   Add New Service
                 </Button>
               </DialogTrigger>
-              <DialogContent>
+              <DialogContent className="max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                   <DialogTitle>
                     {editingService ? "Edit Service" : "Create New Service"}
