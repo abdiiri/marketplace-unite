@@ -67,6 +67,7 @@ const VendorDashboard = () => {
   const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [existingImages, setExistingImages] = useState<string[]>([]);
+  const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const { uploadMultipleImages, uploading } = useImageUpload({ bucket: "service-images" });
@@ -417,49 +418,58 @@ const VendorDashboard = () => {
                   <div>
                     <Label>Service Images</Label>
                     <div className="mt-2 space-y-3">
-                      {/* Existing Images */}
-                      {existingImages.length > 0 && (
-                        <div className="flex flex-wrap gap-2">
-                          {existingImages.map((url, index) => (
-                            <div key={index} className="relative">
-                              <img
-                                src={url}
-                                alt={`Service ${index + 1}`}
-                                className="h-16 w-16 object-cover rounded-lg"
-                              />
-                              <button
-                                type="button"
-                                onClick={() => removeExistingImage(index)}
-                                className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center"
-                              >
-                                <X className="h-3 w-3" />
-                              </button>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                      
-                      {/* New Image Previews */}
-                      {imagePreviews.length > 0 && (
-                        <div className="flex flex-wrap gap-2">
-                          {imagePreviews.map((preview, index) => (
-                            <div key={index} className="relative">
-                              <img
-                                src={preview}
-                                alt={`Preview ${index + 1}`}
-                                className="h-16 w-16 object-cover rounded-lg"
-                              />
-                              <button
-                                type="button"
-                                onClick={() => removeImage(index)}
-                                className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center"
-                              >
-                                <X className="h-3 w-3" />
-                              </button>
-                            </div>
-                          ))}
-                        </div>
-                      )}
+                      {/* Drag & Drop Zone */}
+                      <div
+                        onClick={() => fileInputRef.current?.click()}
+                        onDragOver={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setIsDragging(true);
+                        }}
+                        onDragEnter={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setIsDragging(true);
+                        }}
+                        onDragLeave={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setIsDragging(false);
+                        }}
+                        onDrop={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setIsDragging(false);
+                          const files = e.dataTransfer.files;
+                          if (files && files.length > 0) {
+                            const newFiles = Array.from(files).filter(file => file.type.startsWith('image/'));
+                            if (newFiles.length > 0) {
+                              setImageFiles(prev => [...prev, ...newFiles]);
+                              newFiles.forEach(file => {
+                                const reader = new FileReader();
+                                reader.onload = (ev) => {
+                                  setImagePreviews(prev => [...prev, ev.target?.result as string]);
+                                };
+                                reader.readAsDataURL(file);
+                              });
+                            }
+                          }
+                        }}
+                        className={`
+                          relative cursor-pointer rounded-lg border-2 border-dashed p-6 
+                          transition-all duration-200 ease-in-out
+                          flex flex-col items-center justify-center gap-2 min-h-[120px]
+                          ${isDragging 
+                            ? 'border-primary bg-primary/10' 
+                            : 'border-muted-foreground/30 hover:border-primary/50 hover:bg-muted/50'}
+                        `}
+                      >
+                        <ImagePlus className={`h-8 w-8 ${isDragging ? 'text-primary' : 'text-muted-foreground'}`} />
+                        <p className="text-sm text-muted-foreground text-center">
+                          <span className="font-medium text-foreground">Click to upload</span> or drag and drop
+                        </p>
+                        <p className="text-xs text-muted-foreground">PNG, JPG, GIF up to 10MB</p>
+                      </div>
                       
                       <input
                         ref={fileInputRef}
@@ -469,15 +479,56 @@ const VendorDashboard = () => {
                         onChange={handleImageSelect}
                         className="hidden"
                       />
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => fileInputRef.current?.click()}
-                        className="gap-2"
-                      >
-                        <ImagePlus className="h-4 w-4" />
-                        Add Images
-                      </Button>
+
+                      {/* Existing Images */}
+                      {existingImages.length > 0 && (
+                        <div>
+                          <p className="text-xs text-muted-foreground mb-2">Current images:</p>
+                          <div className="flex flex-wrap gap-2">
+                            {existingImages.map((url, index) => (
+                              <div key={index} className="relative group">
+                                <img
+                                  src={url}
+                                  alt={`Service ${index + 1}`}
+                                  className="h-16 w-16 object-cover rounded-lg border border-border"
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => removeExistingImage(index)}
+                                  className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                                >
+                                  <X className="h-3 w-3" />
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      
+                      {/* New Image Previews */}
+                      {imagePreviews.length > 0 && (
+                        <div>
+                          <p className="text-xs text-muted-foreground mb-2">New images to upload:</p>
+                          <div className="flex flex-wrap gap-2">
+                            {imagePreviews.map((preview, index) => (
+                              <div key={index} className="relative group">
+                                <img
+                                  src={preview}
+                                  alt={`Preview ${index + 1}`}
+                                  className="h-16 w-16 object-cover rounded-lg border border-primary/50"
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => removeImage(index)}
+                                  className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                                >
+                                  <X className="h-3 w-3" />
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                   
