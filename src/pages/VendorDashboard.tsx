@@ -52,11 +52,31 @@ interface Service {
   images: string[] | null;
 }
 
+interface ServiceRequest {
+  id: string;
+  service_id: string;
+  client_id: string;
+  vendor_id: string;
+  message: string | null;
+  status: string;
+  created_at: string;
+  service?: {
+    title: string;
+  };
+  client?: {
+    full_name: string | null;
+    email: string | null;
+    avatar_url: string | null;
+  };
+}
+
 const VendorDashboard = () => {
   const navigate = useNavigate();
   const { user, signOut, profile } = useAuth();
   const [services, setServices] = useState<Service[]>([]);
+  const [serviceRequests, setServiceRequests] = useState<ServiceRequest[]>([]);
   const [loading, setLoading] = useState(true);
+  const [requestsLoading, setRequestsLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingService, setEditingService] = useState<Service | null>(null);
 
@@ -101,6 +121,13 @@ const VendorDashboard = () => {
       trend: "up",
       icon: Star,
     },
+    {
+      title: "Requests",
+      value: serviceRequests.length.toString(),
+      change: "+0",
+      trend: "up",
+      icon: MessageSquare,
+    },
   ];
 
   const fetchServices = async () => {
@@ -123,13 +150,38 @@ const VendorDashboard = () => {
     }
   };
 
+  const fetchRequests = async () => {
+    if (!user) return;
+
+    setRequestsLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from("service_requests")
+        .select(`
+          *,
+          service:services(title),
+          client:profiles!service_requests_client_id_fkey(full_name, email, avatar_url)
+        `)
+        .eq("vendor_id", user.id)
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      setServiceRequests((data as any) || []);
+    } catch (error) {
+      console.error("Error fetching requests:", error);
+    } finally {
+      setRequestsLoading(false);
+    }
+  };
+
   useEffect(() => {
     fetchServices();
+    fetchRequests();
 
     if (!user) return;
 
     // Subscribe to realtime updates for vendor's services
-    const channel = supabase
+    const servicesChannel = supabase
       .channel('vendor-services')
       .on(
         'postgres_changes',
@@ -138,8 +190,19 @@ const VendorDashboard = () => {
       )
       .subscribe();
 
+    // Subscribe to realtime updates for service requests
+    const requestsChannel = supabase
+      .channel('vendor-requests')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'service_requests', filter: `vendor_id=eq.${user.id}` },
+        () => fetchRequests()
+      )
+      .subscribe();
+
     return () => {
-      supabase.removeChannel(channel);
+      supabase.removeChannel(servicesChannel);
+      supabase.removeChannel(requestsChannel);
     };
   }, [user]);
 
@@ -741,6 +804,80 @@ const VendorDashboard = () => {
               </Card>
             </div>
           </div>
+
+          {/* Service Requests Section */}
+          <Card className="glass-card mt-8">
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle className="flex items-center gap-2">
+                <MessageSquare className="h-5 w-5" />
+                Service Requests
+              </CardTitle>
+              <Badge variant="secondary">{serviceRequests.length} requests</Badge>
+            </CardHeader>
+            <CardContent>
+              {requestsLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                </div>
+              ) : serviceRequests.length === 0 ? (
+                <div className="text-center py-8">
+                  <MessageSquare className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                  <p className="text-muted-foreground">No service requests yet.</p>
+                  <p className="text-sm text-muted-foreground">When clients request your services, they'll appear here.</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {serviceRequests.map((request) => (
+                    <div
+                      key={request.id}
+                      className="flex items-start gap-4 p-4 rounded-xl bg-secondary/50 hover:bg-secondary transition-colors"
+                    >
+                      {/* Client Avatar */}
+                      <div className="h-12 w-12 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center text-sm font-semibold overflow-hidden flex-shrink-0">
+                        {request.client?.avatar_url ? (
+                          <img src={request.client.avatar_url} alt="" className="h-full w-full object-cover" />
+                        ) : (
+                          request.client?.full_name?.charAt(0) || "?"
+                        )}
+                      </div>
+                      
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap mb-1">
+                          <p className="font-medium">{request.client?.full_name || "Unknown Client"}</p>
+                          <Badge variant={request.status === "pending" ? "warning" : request.status === "accepted" ? "success" : "secondary"}>
+                            {request.status}
+                          </Badge>
+                        </div>
+                        <p className="text-sm text-muted-foreground mb-1">
+                          Requested: <span className="font-medium text-foreground">{request.service?.title || "Unknown Service"}</span>
+                        </p>
+                        {request.message && (
+                          <p className="text-sm text-muted-foreground line-clamp-2 bg-background/50 p-2 rounded mt-2">
+                            "{request.message}"
+                          </p>
+                        )}
+                        <p className="text-xs text-muted-foreground mt-2">
+                          {new Date(request.created_at).toLocaleDateString()} at {new Date(request.created_at).toLocaleTimeString()}
+                        </p>
+                      </div>
+
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        {request.client?.email && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => window.location.href = `mailto:${request.client?.email}`}
+                          >
+                            Contact
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </div>
       </div>
     </>
