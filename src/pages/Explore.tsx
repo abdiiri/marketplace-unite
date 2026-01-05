@@ -6,6 +6,7 @@ import Footer from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -13,6 +14,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import {
   Search,
   SlidersHorizontal,
@@ -22,9 +30,11 @@ import {
   ArrowLeft,
   X,
   Package,
+  Send,
 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 
 interface ServiceWithProfile {
   id: string;
@@ -47,6 +57,7 @@ interface ServiceWithProfile {
 
 const Explore = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const [showFilters, setShowFilters] = useState(false);
   const [searchQuery, setSearchQuery] = useState(searchParams.get("q") || "");
@@ -56,6 +67,10 @@ const Explore = () => {
   const [favorites, setFavorites] = useState<string[]>([]);
   const [services, setServices] = useState<ServiceWithProfile[]>([]);
   const [loading, setLoading] = useState(true);
+  const [requestDialogOpen, setRequestDialogOpen] = useState(false);
+  const [selectedService, setSelectedService] = useState<ServiceWithProfile | null>(null);
+  const [requestMessage, setRequestMessage] = useState("");
+  const [submittingRequest, setSubmittingRequest] = useState(false);
 
   const activeCategory = searchParams.get("category") || "All";
 
@@ -167,6 +182,42 @@ const Explore = () => {
     searchParams.delete("q");
     searchParams.delete("category");
     setSearchParams(searchParams);
+  };
+
+  const handleRequestService = (service: ServiceWithProfile) => {
+    if (!user) {
+      toast.error("Please login to request a service");
+      navigate("/login");
+      return;
+    }
+    setSelectedService(service);
+    setRequestMessage("");
+    setRequestDialogOpen(true);
+  };
+
+  const submitRequest = async () => {
+    if (!user || !selectedService) return;
+    
+    setSubmittingRequest(true);
+    try {
+      const { error } = await supabase.from("service_requests").insert({
+        service_id: selectedService.id,
+        client_id: user.id,
+        vendor_id: selectedService.user_id,
+        message: requestMessage || null,
+        status: "pending",
+      });
+
+      if (error) throw error;
+      toast.success("Request sent successfully! The vendor will be notified.");
+      setRequestDialogOpen(false);
+      setSelectedService(null);
+      setRequestMessage("");
+    } catch (error: any) {
+      toast.error(error.message || "Failed to send request");
+    } finally {
+      setSubmittingRequest(false);
+    }
   };
 
   return (
@@ -437,6 +488,18 @@ const Explore = () => {
                               </p>
                             </div>
                           </div>
+                          
+                          {/* Request Button */}
+                          <Button 
+                            className="w-full mt-3 gap-2" 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleRequestService(service);
+                            }}
+                          >
+                            <Send className="h-4 w-4" />
+                            Request Service
+                          </Button>
                         </div>
                       </div>
                     ))}
@@ -447,6 +510,46 @@ const Explore = () => {
           </div>
         </main>
         <Footer />
+
+        {/* Request Service Dialog */}
+        <Dialog open={requestDialogOpen} onOpenChange={setRequestDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Request Service</DialogTitle>
+              <DialogDescription>
+                Send a request to {selectedService?.profile?.full_name || "the vendor"} for "{selectedService?.title}"
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <label className="text-sm font-medium mb-2 block">Message (optional)</label>
+                <Textarea
+                  placeholder="Describe what you need..."
+                  value={requestMessage}
+                  onChange={(e) => setRequestMessage(e.target.value)}
+                  rows={4}
+                />
+              </div>
+              <div className="flex gap-2">
+                <Button 
+                  variant="outline" 
+                  className="flex-1"
+                  onClick={() => setRequestDialogOpen(false)}
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  className="flex-1 gap-2"
+                  onClick={submitRequest}
+                  disabled={submittingRequest}
+                >
+                  <Send className="h-4 w-4" />
+                  {submittingRequest ? "Sending..." : "Send Request"}
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </>
   );
