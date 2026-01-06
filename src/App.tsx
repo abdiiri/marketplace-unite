@@ -12,6 +12,7 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import VendorDashboard from "./pages/VendorDashboard";
 import AdminDashboard from "./pages/AdminDashboard";
+import ClientDashboard from "./pages/ClientDashboard";
 import ProfileSettings from "./pages/ProfileSettings";
 import NotFound from "./pages/NotFound";
 
@@ -35,6 +36,14 @@ const App = () => (
                 element={
                   <ProtectedRoute>
                     <ProfileSettings />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/client/dashboard"
+                element={
+                  <ProtectedRoute requiredRoles={["buyer", "admin", "super_admin"]}>
+                    <ClientDashboard />
                   </ProtectedRoute>
                 }
               />
