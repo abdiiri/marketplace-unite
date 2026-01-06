@@ -39,6 +39,7 @@ import {
   Star,
   ImagePlus,
   X,
+  Send,
 } from "lucide-react";
 import omtiiLogo from "@/assets/omtii-logo.png";
 
@@ -70,6 +71,16 @@ interface ServiceRequest {
   };
 }
 
+interface Message {
+  id: string;
+  service_request_id: string;
+  sender_id: string;
+  receiver_id: string;
+  content: string;
+  is_read: boolean;
+  created_at: string;
+}
+
 const VendorDashboard = () => {
   const navigate = useNavigate();
   const { user, signOut, profile } = useAuth();
@@ -79,6 +90,12 @@ const VendorDashboard = () => {
   const [requestsLoading, setRequestsLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingService, setEditingService] = useState<Service | null>(null);
+  const [selectedRequest, setSelectedRequest] = useState<ServiceRequest | null>(null);
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [newMessage, setNewMessage] = useState("");
+  const [sendingMessage, setSendingMessage] = useState(false);
+  const [isMessageDialogOpen, setIsMessageDialogOpen] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Form state
   const [title, setTitle] = useState("");
@@ -174,6 +191,59 @@ const VendorDashboard = () => {
     }
   };
 
+  const fetchMessages = async (requestId: string) => {
+    if (!user) return;
+
+    try {
+      const { data, error } = await supabase
+        .from("messages")
+        .select("*")
+        .eq("service_request_id", requestId)
+        .order("created_at", { ascending: true });
+
+      if (error) throw error;
+      setMessages(data || []);
+
+      // Mark unread messages as read
+      await supabase
+        .from("messages")
+        .update({ is_read: true })
+        .eq("service_request_id", requestId)
+        .eq("receiver_id", user.id)
+        .eq("is_read", false);
+    } catch (error) {
+      console.error("Error fetching messages:", error);
+    }
+  };
+
+  const openMessageDialog = async (request: ServiceRequest) => {
+    setSelectedRequest(request);
+    setIsMessageDialogOpen(true);
+    await fetchMessages(request.id);
+  };
+
+  const sendMessage = async () => {
+    if (!user || !selectedRequest || !newMessage.trim()) return;
+
+    setSendingMessage(true);
+    try {
+      const { error } = await supabase.from("messages").insert({
+        service_request_id: selectedRequest.id,
+        sender_id: user.id,
+        receiver_id: selectedRequest.client_id,
+        content: newMessage.trim(),
+      });
+
+      if (error) throw error;
+      setNewMessage("");
+      await fetchMessages(selectedRequest.id);
+    } catch (error: any) {
+      toast.error(error.message || "Failed to send message");
+    } finally {
+      setSendingMessage(false);
+    }
+  };
+
   useEffect(() => {
     fetchServices();
     fetchRequests();
@@ -200,11 +270,33 @@ const VendorDashboard = () => {
       )
       .subscribe();
 
+    // Subscribe to realtime messages
+    const messagesChannel = supabase
+      .channel('vendor-messages')
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'messages' },
+        (payload) => {
+          const newMsg = payload.new as Message;
+          if (newMsg.receiver_id === user.id || newMsg.sender_id === user.id) {
+            if (selectedRequest && newMsg.service_request_id === selectedRequest.id) {
+              setMessages(prev => [...prev, newMsg]);
+            }
+          }
+        }
+      )
+      .subscribe();
+
     return () => {
       supabase.removeChannel(servicesChannel);
       supabase.removeChannel(requestsChannel);
+      supabase.removeChannel(messagesChannel);
     };
-  }, [user]);
+  }, [user, selectedRequest]);
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
 
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -862,15 +954,15 @@ const VendorDashboard = () => {
                       </div>
 
                       <div className="flex items-center gap-2 flex-shrink-0">
-                        {request.client?.email && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => window.location.href = `mailto:${request.client?.email}`}
-                          >
-                            Contact
-                          </Button>
-                        )}
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => openMessageDialog(request)}
+                          className="gap-1"
+                        >
+                          <MessageSquare className="h-4 w-4" />
+                          Message
+                        </Button>
                       </div>
                     </div>
                   ))}
@@ -879,6 +971,65 @@ const VendorDashboard = () => {
             </CardContent>
           </Card>
         </div>
+
+        {/* Message Dialog */}
+        <Dialog open={isMessageDialogOpen} onOpenChange={setIsMessageDialogOpen}>
+          <DialogContent className="max-w-lg max-h-[80vh] flex flex-col">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <MessageSquare className="h-5 w-5" />
+                Chat with {selectedRequest?.client?.full_name || "Client"}
+              </DialogTitle>
+              <p className="text-sm text-muted-foreground">
+                Service: {selectedRequest?.service?.title}
+              </p>
+            </DialogHeader>
+            
+            {/* Messages */}
+            <div className="flex-1 overflow-y-auto max-h-[400px] space-y-3 py-4">
+              {messages.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <MessageSquare className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                  <p>No messages yet. Start the conversation!</p>
+                </div>
+              ) : (
+                messages.map((msg) => (
+                  <div
+                    key={msg.id}
+                    className={`flex ${msg.sender_id === user?.id ? "justify-end" : "justify-start"}`}
+                  >
+                    <div
+                      className={`max-w-[80%] px-4 py-2 rounded-2xl ${
+                        msg.sender_id === user?.id
+                          ? "bg-primary text-primary-foreground rounded-br-sm"
+                          : "bg-secondary rounded-bl-sm"
+                      }`}
+                    >
+                      <p className="text-sm">{msg.content}</p>
+                      <p className={`text-xs mt-1 ${msg.sender_id === user?.id ? "text-primary-foreground/70" : "text-muted-foreground"}`}>
+                        {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </p>
+                    </div>
+                  </div>
+                ))
+              )}
+              <div ref={messagesEndRef} />
+            </div>
+
+            {/* Send Message */}
+            <div className="flex gap-2 pt-4 border-t">
+              <Input
+                value={newMessage}
+                onChange={(e) => setNewMessage(e.target.value)}
+                placeholder="Type a message..."
+                onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && sendMessage()}
+              />
+              <Button onClick={sendMessage} disabled={sendingMessage || !newMessage.trim()}>
+                <Send className="h-4 w-4" />
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </>
   );

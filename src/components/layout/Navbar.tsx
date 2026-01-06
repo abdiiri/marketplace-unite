@@ -32,7 +32,7 @@ const Navbar = () => {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
-  const { user, profile, isAdmin, isSuperAdmin, isVendor, signOut } = useAuth();
+  const { user, profile, isAdmin, isSuperAdmin, isVendor, isBuyer, signOut } = useAuth();
 
   const navLinks = [
     { name: "Explore", path: "/explore" },
@@ -50,7 +50,8 @@ const Navbar = () => {
   const getDashboardLink = () => {
     if (isSuperAdmin || isAdmin) return "/admin/dashboard";
     if (isVendor) return "/vendor/dashboard";
-    return null;
+    if (isBuyer) return "/client/dashboard";
+    return "/client/dashboard"; // Default for authenticated users
   };
 
   return (
@@ -136,16 +137,14 @@ const Navbar = () => {
                     </div>
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
-                  {getDashboardLink() && (
-                    <DropdownMenuItem onClick={() => navigate(getDashboardLink()!)}>
-                      {isSuperAdmin || isAdmin ? (
-                        <Shield className="h-4 w-4 mr-2" />
-                      ) : (
-                        <LayoutDashboard className="h-4 w-4 mr-2" />
-                      )}
-                      Dashboard
-                    </DropdownMenuItem>
-                  )}
+                  <DropdownMenuItem onClick={() => navigate(getDashboardLink())}>
+                    {isSuperAdmin || isAdmin ? (
+                      <Shield className="h-4 w-4 mr-2" />
+                    ) : (
+                      <LayoutDashboard className="h-4 w-4 mr-2" />
+                    )}
+                    Dashboard
+                  </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => navigate("/profile")}>
                     <User className="h-4 w-4 mr-2" />
                     Profile
@@ -235,14 +234,12 @@ const Navbar = () => {
 
               {user ? (
                 <>
-                  {getDashboardLink() && (
-                    <Link to={getDashboardLink()!} onClick={() => setIsMenuOpen(false)}>
-                      <Button variant="ghost" className="w-full justify-start">
-                        <LayoutDashboard className="h-4 w-4 mr-2" />
-                        Dashboard
-                      </Button>
-                    </Link>
-                  )}
+                  <Link to={getDashboardLink()} onClick={() => setIsMenuOpen(false)}>
+                    <Button variant="ghost" className="w-full justify-start">
+                      <LayoutDashboard className="h-4 w-4 mr-2" />
+                      Dashboard
+                    </Button>
+                  </Link>
                   <Link to="/profile" onClick={() => setIsMenuOpen(false)}>
                     <Button variant="ghost" className="w-full justify-start">
                       <User className="h-4 w-4 mr-2" />
