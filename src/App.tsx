@@ -8,6 +8,8 @@ import { AuthProvider } from "@/hooks/useAuth";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import Index from "./pages/Index";
 import Explore from "./pages/Explore";
+import Categories from "./pages/Categories";
+import BecomeVendor from "./pages/BecomeVendor";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import VendorDashboard from "./pages/VendorDashboard";
@@ -29,6 +31,9 @@ const App = () => (
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/explore" element={<Explore />} />
+              <Route path="/categories" element={<Categories />} />
+              <Route path="/become-vendor" element={<BecomeVendor />} />
+              <Route path="/login" element={<Login />} />
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
               <Route
