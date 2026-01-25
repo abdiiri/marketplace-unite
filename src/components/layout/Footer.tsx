@@ -80,7 +80,7 @@ const Footer = () => {
           {/* Brand */}
           <div className="col-span-2 md:col-span-4 lg:col-span-1">
             <Link to="/" className="flex items-center gap-2 mb-4">
-              <img src={omtiiLogo} alt="OMTII" className="h-10 w-auto" />
+              <span className="font-display text-2xl font-bold text-primary">Abdiiri</span>
             </Link>
             <p className="text-muted-foreground text-sm mb-4">
               The modern marketplace connecting talented freelancers with clients worldwide.
@@ -171,7 +171,7 @@ const Footer = () => {
         <div className="container mx-auto px-4 py-6">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             <p className="text-sm text-muted-foreground">
-              © {new Date().getFullYear()} OMTII. All rights reserved.
+              © {new Date().getFullYear()} Abdiiri. All rights reserved.
             </p>
             <div className="flex gap-6">
               <Link

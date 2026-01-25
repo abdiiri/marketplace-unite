@@ -53,7 +53,7 @@ const HeroSection = () => {
 
           {/* Subheadline */}
           <p className="text-lg sm:text-xl text-primary-foreground/70 mb-10 max-w-2xl mx-auto animate-slide-up stagger-1">
-            Connect with talented professionals, discover unique services, and bring your projects to life with OMTII.
+            Connect with talented professionals, discover unique services, and bring your projects to life with Abdiiri.
           </p>
 
           {/* Search Bar */}

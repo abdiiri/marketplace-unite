@@ -109,7 +109,7 @@ const ProfileSettings = () => {
   return (
     <>
       <Helmet>
-        <title>Profile Settings - OMTII</title>
+        <title>Profile Settings - Abdiiri</title>
         <meta name="description" content="Manage your profile information and settings." />
       </Helmet>
       <div className="min-h-screen bg-background">
@@ -125,7 +125,7 @@ const ProfileSettings = () => {
                   <ArrowLeft className="h-5 w-5" />
                 </button>
                 <Link to="/" className="flex items-center gap-2">
-                  <img src={omtiiLogo} alt="OMTII" className="h-9 w-auto" />
+                  <span className="font-display text-xl font-bold text-primary">Abdiiri</span>
                 </Link>
               </div>
               <div className="flex items-center gap-2">

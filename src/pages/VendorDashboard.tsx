@@ -464,7 +464,7 @@ const VendorDashboard = () => {
   return (
     <>
       <Helmet>
-        <title>Vendor Dashboard - OMTII</title>
+        <title>Vendor Dashboard - Abdiiri</title>
         <meta name="description" content="Manage your services, orders, and earnings from your vendor dashboard." />
       </Helmet>
       <div className="min-h-screen bg-background">
@@ -480,7 +480,7 @@ const VendorDashboard = () => {
                   <ArrowLeft className="h-5 w-5" />
                 </button>
                 <Link to="/" className="flex items-center gap-2">
-                  <img src={omtiiLogo} alt="OMTII" className="h-9 w-auto" />
+                  <span className="font-display text-xl font-bold text-primary">Abdiiri</span>
                 </Link>
                 <Badge variant="verified">Vendor</Badge>
               </div>

@@ -60,7 +60,7 @@ const Navbar = () => {
         <div className="flex h-16 items-center justify-between gap-4">
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2 flex-shrink-0">
-            <img src={omtiiLogo} alt="OMTII" className="h-10 w-auto" />
+            <span className="font-display text-2xl font-bold text-primary">Abdiiri</span>
           </Link>
 
           {/* Desktop Search */}
