@@ -16,7 +16,7 @@ import {
   Shield,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import omtiiLogo from "@/assets/omtii-logo.png";
+import abdiiriLogo from "@/assets/abdiiri-logo.png";
 import { useAuth } from "@/hooks/useAuth";
 import {
   DropdownMenu,
@@ -60,7 +60,7 @@ const Navbar = () => {
         <div className="flex h-16 items-center justify-between gap-4">
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2 flex-shrink-0">
-            <span className="font-display text-2xl font-bold text-primary">Abdiiri</span>
+            <img src={abdiiriLogo} alt="Abdiiri" className="h-8 w-auto" />
           </Link>
 
           {/* Desktop Search */}

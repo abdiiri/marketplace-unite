@@ -9,7 +9,7 @@ import {
   Youtube,
   Send,
 } from "lucide-react";
-import omtiiLogo from "@/assets/omtii-logo.png";
+import abdiiriLogo from "@/assets/abdiiri-logo.png";
 
 const Footer = () => {
   const footerLinks = {
@@ -80,7 +80,7 @@ const Footer = () => {
           {/* Brand */}
           <div className="col-span-2 md:col-span-4 lg:col-span-1">
             <Link to="/" className="flex items-center gap-2 mb-4">
-              <span className="font-display text-2xl font-bold text-primary">Abdiiri</span>
+              <img src={abdiiriLogo} alt="Abdiiri" className="h-8 w-auto" />
             </Link>
             <p className="text-muted-foreground text-sm mb-4">
               The modern marketplace connecting talented freelancers with clients worldwide.
