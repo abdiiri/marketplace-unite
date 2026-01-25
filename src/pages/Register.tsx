@@ -65,7 +65,7 @@ const Register = () => {
       }
 
       if (data.user) {
-        toast.success("Account created successfully! Welcome to OMTII.");
+        toast.success("Account created successfully! Welcome to Abdiiri.");
         navigate("/");
       }
     } catch (error: any) {
@@ -84,8 +84,8 @@ const Register = () => {
   return (
     <>
       <Helmet>
-        <title>Create Account - OMTII</title>
-        <meta name="description" content="Join OMTII and start connecting with top freelancers or offer your services to millions of clients worldwide." />
+        <title>Create Account - Abdiiri</title>
+        <meta name="description" content="Join Abdiiri and start connecting with top freelancers or offer your services to millions of clients worldwide." />
       </Helmet>
       <div className="min-h-screen flex">
         {/* Left Side - Image */}
@@ -95,7 +95,7 @@ const Register = () => {
               Start your journey today
             </h2>
             <p className="text-primary-foreground/70 text-lg mb-8">
-              Whether you're looking to hire or get hired, OMTII is your gateway to success
+              Whether you're looking to hire or get hired, Abdiiri is your gateway to success
             </p>
             <div className="space-y-4 text-left">
               {[
@@ -129,7 +129,7 @@ const Register = () => {
 
             {/* Logo */}
             <Link to="/" className="flex items-center gap-2 mb-8">
-              <img src={omtiiLogo} alt="OMTII" className="h-10 w-auto" />
+              <span className="font-display text-2xl font-bold text-primary">Abdiiri</span>
             </Link>
 
             <h1 className="font-display text-3xl font-bold mb-2">Create your account</h1>

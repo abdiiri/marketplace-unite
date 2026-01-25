@@ -212,7 +212,7 @@ const AdminDashboard = () => {
   return (
     <>
       <Helmet>
-        <title>Admin Dashboard - OMTII</title>
+        <title>Admin Dashboard - Abdiiri</title>
         <meta name="description" content="Manage users, vendors, orders, and platform settings from the admin dashboard." />
       </Helmet>
       <div className="min-h-screen bg-background">
@@ -228,7 +228,7 @@ const AdminDashboard = () => {
                   <ArrowLeft className="h-5 w-5" />
                 </button>
                 <Link to="/" className="flex items-center gap-2">
-                  <img src={omtiiLogo} alt="OMTII" className="h-9 w-auto" />
+                  <span className="font-display text-xl font-bold text-primary">Abdiiri</span>
                 </Link>
                 <Badge variant="default" className="gap-1">
                   <Shield className="h-3 w-3" />

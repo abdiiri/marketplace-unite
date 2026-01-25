@@ -67,7 +67,7 @@ const BecomeVendor = () => {
               Turn Your Skills Into <span className="text-primary">Income</span>
             </h1>
             <p className="text-xl text-muted-foreground max-w-2xl mx-auto mb-8">
-              Join OMTII as a vendor and start offering your services to clients around the world. 
+              Join Abdiiri as a vendor and start offering your services to clients around the world. 
               Set your own prices, work on your terms.
             </p>
             <Button variant="hero" size="lg" onClick={handleGetStarted} className="text-lg px-8">
@@ -118,7 +118,7 @@ const BecomeVendor = () => {
             <CardContent className="p-0">
               <h2 className="text-3xl md:text-4xl font-bold mb-4">Ready to Get Started?</h2>
               <p className="text-lg opacity-90 max-w-xl mx-auto mb-8">
-                Join thousands of successful vendors already earning on OMTII.
+                Join thousands of successful vendors already earning on Abdiiri.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Button 

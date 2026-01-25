@@ -238,7 +238,7 @@ const ClientDashboard = () => {
   return (
     <>
       <Helmet>
-        <title>Client Dashboard - OMTII</title>
+        <title>Client Dashboard - Abdiiri</title>
         <meta name="description" content="View your service requests and communicate with vendors." />
       </Helmet>
       <div className="min-h-screen bg-background">
@@ -254,7 +254,7 @@ const ClientDashboard = () => {
                   <ArrowLeft className="h-5 w-5" />
                 </button>
                 <Link to="/" className="flex items-center gap-2">
-                  <img src={omtiiLogo} alt="OMTII" className="h-9 w-auto" />
+                  <span className="font-display text-xl font-bold text-primary">Abdiiri</span>
                 </Link>
                 <Badge variant="secondary">Client</Badge>
               </div>

@@ -12,7 +12,7 @@ const Index = () => {
   return (
     <>
       <Helmet>
-        <title>MarketFlow - Find Top Freelance Services & Professionals</title>
+        <title>Abdiiri Marketplace - Find Top Freelance Services & Professionals</title>
         <meta
           name="description"
           content="Connect with talented professionals, discover unique services, and bring your projects to life. The modern marketplace for freelancers and businesses."

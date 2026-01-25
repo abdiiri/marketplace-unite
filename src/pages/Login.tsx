@@ -71,8 +71,8 @@ const Login = () => {
   return (
     <>
       <Helmet>
-        <title>Sign In - OMTII</title>
-        <meta name="description" content="Sign in to your OMTII account to access your dashboard, manage orders, and connect with clients." />
+        <title>Sign In - Abdiiri</title>
+        <meta name="description" content="Sign in to your Abdiiri account to access your dashboard, manage orders, and connect with clients." />
       </Helmet>
       <div className="min-h-screen flex">
         {/* Left Side - Form */}
@@ -89,7 +89,7 @@ const Login = () => {
 
             {/* Logo */}
             <Link to="/" className="flex items-center gap-2 mb-8">
-              <img src={omtiiLogo} alt="OMTII" className="h-10 w-auto" />
+              <span className="font-display text-2xl font-bold text-primary">Abdiiri</span>
             </Link>
 
             <h1 className="font-display text-3xl font-bold mb-2">Welcome back</h1>
@@ -194,7 +194,7 @@ const Login = () => {
               Your projects deserve the best talent
             </h2>
             <p className="text-primary-foreground/70 text-lg mb-8">
-              Join thousands of businesses finding top professionals on OMTII
+              Join thousands of businesses finding top professionals on Abdiiri
             </p>
             <div className="grid grid-cols-3 gap-4">
               {[

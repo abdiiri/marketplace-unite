@@ -4,7 +4,7 @@ const TestimonialsSection = () => {
   const testimonials = [
     {
       id: 1,
-      content: "MarketFlow transformed how we hire freelancers. The quality of professionals here is outstanding, and the platform makes everything so seamless.",
+      content: "Abdiiri transformed how we hire freelancers. The quality of professionals here is outstanding, and the platform makes everything so seamless.",
       author: "David Chen",
       role: "CEO, TechStart Inc.",
       avatar: "https://images.unsplash.com/photo-1560250097-0b93528c311a?w=100&h=100&fit=crop",

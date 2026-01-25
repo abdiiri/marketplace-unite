@@ -29,7 +29,7 @@ const CTASection = () => {
                 Ready to grow your business?
               </h2>
               <p className="text-lg text-primary-foreground/80 mb-8 max-w-lg">
-                Join thousands of freelancers and businesses already thriving on MarketFlow. Create your account and start your journey today.
+                Join thousands of freelancers and businesses already thriving on Abdiiri. Create your account and start your journey today.
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
                 <Link to="/register">
