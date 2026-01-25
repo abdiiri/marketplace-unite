@@ -21,7 +21,7 @@ import {
   LogOut,
   Camera,
 } from "lucide-react";
-import omtiiLogo from "@/assets/omtii-logo.png";
+import abdiiriLogo from "@/assets/abdiiri-logo.png";
 
 const ProfileSettings = () => {
   const navigate = useNavigate();
@@ -125,7 +125,7 @@ const ProfileSettings = () => {
                   <ArrowLeft className="h-5 w-5" />
                 </button>
                 <Link to="/" className="flex items-center gap-2">
-                  <span className="font-display text-xl font-bold text-primary">Abdiiri</span>
+                  <img src={abdiiriLogo} alt="Abdiiri" className="h-7 w-auto" />
                 </Link>
               </div>
               <div className="flex items-center gap-2">

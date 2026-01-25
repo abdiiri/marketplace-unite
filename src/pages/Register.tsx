@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Eye, EyeOff, Mail, Lock, User, Chrome, Check, ArrowLeft, Loader2 } from "lucide-react";
-import omtiiLogo from "@/assets/omtii-logo.png";
+import abdiiriLogo from "@/assets/abdiiri-logo.png";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -129,7 +129,7 @@ const Register = () => {
 
             {/* Logo */}
             <Link to="/" className="flex items-center gap-2 mb-8">
-              <span className="font-display text-2xl font-bold text-primary">Abdiiri</span>
+              <img src={abdiiriLogo} alt="Abdiiri" className="h-8 w-auto" />
             </Link>
 
             <h1 className="font-display text-3xl font-bold mb-2">Create your account</h1>
