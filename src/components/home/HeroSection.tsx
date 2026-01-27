@@ -111,7 +111,7 @@ const HeroSection = () => {
             <div className="flex items-center gap-3 mb-2">
               <div className="h-10 w-10 rounded-full bg-gradient-to-br from-primary to-accent" />
               <div>
-                <p className="font-semibold text-foreground text-sm">Sarah K.</p>
+                <p className="font-semibold text-foreground text-sm">Farah K.</p>
                 <p className="text-xs text-muted-foreground">UI Designer</p>
               </div>
             </div>
