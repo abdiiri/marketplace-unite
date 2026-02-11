@@ -953,7 +953,53 @@ const VendorDashboard = () => {
                         </p>
                       </div>
 
-                      <div className="flex items-center gap-2 flex-shrink-0">
+                      <div className="flex items-center gap-2 flex-shrink-0 flex-wrap">
+                        {request.status === "pending" && (
+                          <>
+                            <Button
+                              variant="default"
+                              size="sm"
+                              className="gap-1"
+                              onClick={async () => {
+                                try {
+                                  const { error } = await supabase
+                                    .from("service_requests")
+                                    .update({ status: "accepted" })
+                                    .eq("id", request.id);
+                                  if (error) throw error;
+                                  toast.success("Request accepted!");
+                                  fetchRequests();
+                                } catch (err: any) {
+                                  toast.error(err.message || "Failed to accept");
+                                }
+                              }}
+                            >
+                              <CheckCircle2 className="h-4 w-4" />
+                              Accept
+                            </Button>
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              className="gap-1"
+                              onClick={async () => {
+                                try {
+                                  const { error } = await supabase
+                                    .from("service_requests")
+                                    .update({ status: "rejected" })
+                                    .eq("id", request.id);
+                                  if (error) throw error;
+                                  toast.success("Request rejected");
+                                  fetchRequests();
+                                } catch (err: any) {
+                                  toast.error(err.message || "Failed to reject");
+                                }
+                              }}
+                            >
+                              <XCircle className="h-4 w-4" />
+                              Reject
+                            </Button>
+                          </>
+                        )}
                         <Button
                           variant="outline"
                           size="sm"

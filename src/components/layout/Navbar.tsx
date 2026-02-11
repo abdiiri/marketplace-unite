@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -30,6 +30,7 @@ import {
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
   const location = useLocation();
   const navigate = useNavigate();
   const { user, profile, isAdmin, isSuperAdmin, isVendor, isBuyer, signOut } = useAuth();
@@ -47,11 +48,20 @@ const Navbar = () => {
     navigate("/");
   };
 
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      navigate(`/explore?q=${encodeURIComponent(searchQuery.trim())}`);
+      setSearchQuery("");
+      setIsSearchOpen(false);
+    }
+  };
+
   const getDashboardLink = () => {
     if (isSuperAdmin || isAdmin) return "/admin/dashboard";
     if (isVendor) return "/vendor/dashboard";
     if (isBuyer) return "/client/dashboard";
-    return "/client/dashboard"; // Default for authenticated users
+    return "/client/dashboard";
   };
 
   return (
@@ -64,16 +74,18 @@ const Navbar = () => {
           </Link>
 
           {/* Desktop Search */}
-          <div className="hidden md:flex flex-1 max-w-md mx-4">
+          <form onSubmit={handleSearch} className="hidden md:flex flex-1 max-w-md mx-4">
             <div className="relative w-full">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 type="search"
                 placeholder="Search services, products..."
                 className="pl-10 bg-secondary/50 border-transparent focus:border-primary/30 focus:bg-card"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
-          </div>
+          </form>
 
           {/* Desktop Navigation */}
           <div className="hidden lg:flex items-center gap-1">
@@ -94,25 +106,19 @@ const Navbar = () => {
 
           {/* Desktop Actions */}
           <div className="hidden md:flex items-center gap-2">
-            <Button variant="ghost" size="icon" className="relative">
+            <Button variant="ghost" size="icon" onClick={() => navigate("/explore")}>
               <Heart className="h-5 w-5" />
             </Button>
-            <Button variant="ghost" size="icon" className="relative">
-              <MessageSquare className="h-5 w-5" />
-              <Badge variant="accent" className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center text-[10px]">
-                3
-              </Badge>
-            </Button>
-            <Button variant="ghost" size="icon" className="relative">
-              <Bell className="h-5 w-5" />
-              <span className="absolute -top-1 -right-1 h-2.5 w-2.5 bg-accent rounded-full" />
-            </Button>
-            <Button variant="ghost" size="icon" className="relative">
-              <ShoppingCart className="h-5 w-5" />
-              <Badge variant="primary" className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center text-[10px]">
-                2
-              </Badge>
-            </Button>
+            {user && (
+              <>
+                <Button variant="ghost" size="icon" className="relative" onClick={() => navigate(getDashboardLink())}>
+                  <MessageSquare className="h-5 w-5" />
+                </Button>
+                <Button variant="ghost" size="icon" className="relative" onClick={() => navigate(getDashboardLink())}>
+                  <Bell className="h-5 w-5" />
+                </Button>
+              </>
+            )}
             <div className="w-px h-6 bg-border mx-2" />
 
             {user ? (
@@ -181,12 +187,6 @@ const Navbar = () => {
             >
               <Search className="h-5 w-5" />
             </Button>
-            <Button variant="ghost" size="icon" className="relative">
-              <ShoppingCart className="h-5 w-5" />
-              <Badge variant="primary" className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center text-[10px]">
-                2
-              </Badge>
-            </Button>
             <Button
               variant="ghost"
               size="icon"
@@ -199,17 +199,19 @@ const Navbar = () => {
 
         {/* Mobile Search */}
         {isSearchOpen && (
-          <div className="md:hidden pb-4 animate-slide-in-down">
+          <form onSubmit={handleSearch} className="md:hidden pb-4 animate-slide-in-down">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 type="search"
                 placeholder="Search services, products..."
                 className="pl-10 bg-secondary/50 border-transparent"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
                 autoFocus
               />
             </div>
-          </div>
+          </form>
         )}
 
         {/* Mobile Menu */}
