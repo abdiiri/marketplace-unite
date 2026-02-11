@@ -225,8 +225,8 @@ const Explore = () => {
       <Helmet>
         <title>
           {activeCategory !== "All"
-            ? `${activeCategory} Services - OMTII`
-            : "Explore Services - OMTII"}
+            ? `${activeCategory} Services - Abdiiri`
+            : "Explore Services - Abdiiri"}
         </title>
         <meta
           name="description"
