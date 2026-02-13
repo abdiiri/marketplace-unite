@@ -9,6 +9,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { UserRoleManager } from "@/components/admin/UserRoleManager";
 import { ServiceManager } from "@/components/admin/ServiceManager";
 import { CategoryManager } from "@/components/admin/CategoryManager";
+import { RequestManager } from "@/components/admin/RequestManager";
+import { TicketManager } from "@/components/admin/TicketManager";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -37,6 +39,8 @@ import {
   Pencil,
   Trash2,
   User,
+  MessageSquare,
+  HelpCircle,
 } from "lucide-react";
 import abdiiriLogo from "@/assets/abdiiri-logo.png";
 import { Label } from "@/components/ui/label";
@@ -297,7 +301,7 @@ const AdminDashboard = () => {
 
           {/* Tabs for different management sections */}
           <Tabs defaultValue="users" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-3 lg:w-auto lg:inline-flex">
+            <TabsList className="grid w-full grid-cols-5 lg:w-auto lg:inline-flex">
               <TabsTrigger value="users" className="gap-2">
                 <Users className="h-4 w-4" />
                 Users
@@ -309,6 +313,14 @@ const AdminDashboard = () => {
               <TabsTrigger value="categories" className="gap-2">
                 <FolderOpen className="h-4 w-4" />
                 Categories
+              </TabsTrigger>
+              <TabsTrigger value="requests" className="gap-2">
+                <MessageSquare className="h-4 w-4" />
+                Requests
+              </TabsTrigger>
+              <TabsTrigger value="tickets" className="gap-2">
+                <HelpCircle className="h-4 w-4" />
+                Tickets
               </TabsTrigger>
             </TabsList>
 
@@ -385,7 +397,7 @@ const AdminDashboard = () => {
                                           >
                                             <Pencil className="h-4 w-4" />
                                           </Button>
-                                          {isSuperAdmin && (
+                                          {(isSuperAdmin || (isAdmin && !u.roles.includes("super_admin") && !u.roles.includes("admin"))) && (
                                             <Button
                                               variant="ghost"
                                               size="icon"
@@ -464,6 +476,36 @@ const AdminDashboard = () => {
                 </CardHeader>
                 <CardContent>
                   <ServiceManager />
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* Service Requests Tab */}
+            <TabsContent value="requests">
+              <Card className="glass-card">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <MessageSquare className="h-5 w-5" />
+                    All Service Requests
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <RequestManager />
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* Support Tickets Tab */}
+            <TabsContent value="tickets">
+              <Card className="glass-card">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <HelpCircle className="h-5 w-5" />
+                    Support Tickets
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <TicketManager />
                 </CardContent>
               </Card>
             </TabsContent>
