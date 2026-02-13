@@ -16,6 +16,7 @@ import VendorDashboard from "./pages/VendorDashboard";
 import AdminDashboard from "./pages/AdminDashboard";
 import ClientDashboard from "./pages/ClientDashboard";
 import ProfileSettings from "./pages/ProfileSettings";
+import HelpCenter from "./pages/HelpCenter";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -34,6 +35,7 @@ const App = () => (
               <Route path="/categories" element={<Categories />} />
               <Route path="/become-vendor" element={<BecomeVendor />} />
               <Route path="/login" element={<Login />} />
+              <Route path="/help" element={<HelpCenter />} />
               <Route path="/register" element={<Register />} />
               <Route
                 path="/profile"
