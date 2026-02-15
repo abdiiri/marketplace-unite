@@ -17,6 +17,7 @@ import {
   Search,
   FolderOpen,
 } from "lucide-react";
+import { logAdminAction } from "@/lib/activityLog";
 
 interface Category {
   id: string;
@@ -94,6 +95,7 @@ export function CategoryManager() {
       if (error) throw error;
 
       toast.success("Category updated successfully!");
+      logAdminAction("update", "category", editingCategory.id, `Updated category: ${formData.name}`);
       setIsDialogOpen(false);
       setEditingCategory(null);
       fetchCategories();
@@ -114,6 +116,7 @@ export function CategoryManager() {
       if (error) throw error;
 
       toast.success("Category deleted successfully!");
+      logAdminAction("delete", "category", categoryId, "Deleted a category");
       fetchCategories();
     } catch (error: any) {
       toast.error(error.message || "Failed to delete category");

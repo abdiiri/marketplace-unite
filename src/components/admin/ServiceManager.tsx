@@ -24,6 +24,7 @@ import {
   Check,
   X,
 } from "lucide-react";
+import { logAdminAction } from "@/lib/activityLog";
 
 interface Service {
   id: string;
@@ -117,6 +118,7 @@ export function ServiceManager() {
       if (error) throw error;
 
       toast.success("Service updated successfully!");
+      logAdminAction("update", "service", editingService.id, `Updated service: ${formData.title}`);
       setIsDialogOpen(false);
       setEditingService(null);
       fetchServices();
@@ -137,6 +139,7 @@ export function ServiceManager() {
       if (error) throw error;
 
       toast.success("Service deleted successfully!");
+      logAdminAction("delete", "service", serviceId, "Deleted a service");
       fetchServices();
     } catch (error: any) {
       toast.error(error.message || "Failed to delete service");
@@ -152,6 +155,7 @@ export function ServiceManager() {
 
       if (error) throw error;
       toast.success("Service approved!");
+      logAdminAction("approve", "service", serviceId, "Approved a service");
       fetchServices();
     } catch (error: any) {
       toast.error(error.message || "Failed to approve service");
@@ -167,6 +171,7 @@ export function ServiceManager() {
 
       if (error) throw error;
       toast.success("Service rejected!");
+      logAdminAction("reject", "service", serviceId, "Rejected a service");
       fetchServices();
     } catch (error: any) {
       toast.error(error.message || "Failed to reject service");

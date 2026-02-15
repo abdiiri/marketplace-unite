@@ -11,9 +11,11 @@ import { ServiceManager } from "@/components/admin/ServiceManager";
 import { CategoryManager } from "@/components/admin/CategoryManager";
 import { RequestManager } from "@/components/admin/RequestManager";
 import { TicketManager } from "@/components/admin/TicketManager";
+import { ActivityLog } from "@/components/admin/ActivityLog";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { logAdminAction } from "@/lib/activityLog";
 import {
   Dialog,
   DialogContent,
@@ -41,6 +43,7 @@ import {
   User,
   MessageSquare,
   HelpCircle,
+  Activity,
 } from "lucide-react";
 import abdiiriLogo from "@/assets/abdiiri-logo.png";
 import { Label } from "@/components/ui/label";
@@ -187,6 +190,7 @@ const AdminDashboard = () => {
       if (error) throw error;
 
       toast.success("User updated successfully!");
+      logAdminAction("update", "user", editingUser.id, `Updated user: ${editFormData.full_name}`);
       setIsEditDialogOpen(false);
       setEditingUser(null);
       fetchUsers();
@@ -207,6 +211,7 @@ const AdminDashboard = () => {
       if (error) throw error;
 
       toast.success("User deleted successfully!");
+      logAdminAction("delete", "user", userId, "Deleted a user");
       fetchUsers();
     } catch (error: any) {
       toast.error(error.message || "Failed to delete user");
@@ -301,7 +306,7 @@ const AdminDashboard = () => {
 
           {/* Tabs for different management sections */}
           <Tabs defaultValue="users" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-5 lg:w-auto lg:inline-flex">
+            <TabsList className="grid w-full grid-cols-6 lg:w-auto lg:inline-flex">
               <TabsTrigger value="users" className="gap-2">
                 <Users className="h-4 w-4" />
                 Users
@@ -321,6 +326,10 @@ const AdminDashboard = () => {
               <TabsTrigger value="tickets" className="gap-2">
                 <HelpCircle className="h-4 w-4" />
                 Tickets
+              </TabsTrigger>
+              <TabsTrigger value="activity" className="gap-2">
+                <Activity className="h-4 w-4" />
+                Activity
               </TabsTrigger>
             </TabsList>
 
@@ -521,6 +530,21 @@ const AdminDashboard = () => {
                 </CardHeader>
                 <CardContent>
                   <CategoryManager />
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* Activity Log Tab */}
+            <TabsContent value="activity">
+              <Card className="glass-card">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Activity className="h-5 w-5" />
+                    Admin Activity Log
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ActivityLog />
                 </CardContent>
               </Card>
             </TabsContent>
