@@ -13,6 +13,7 @@ import {
   MessageSquare,
   Package,
 } from "lucide-react";
+import { logAdminAction } from "@/lib/activityLog";
 
 interface ServiceRequest {
   id: string;
@@ -66,6 +67,7 @@ export function RequestManager() {
         .eq("id", id);
       if (error) throw error;
       toast.success(`Request ${status}`);
+      logAdminAction("status_change", "service_request", id, `Changed request status to ${status}`);
       fetchRequests();
     } catch (error: any) {
       toast.error(error.message || "Failed to update");
@@ -81,6 +83,7 @@ export function RequestManager() {
         .eq("id", id);
       if (error) throw error;
       toast.success("Request deleted");
+      logAdminAction("delete", "service_request", id, "Deleted a service request");
       fetchRequests();
     } catch (error: any) {
       toast.error(error.message || "Failed to delete");

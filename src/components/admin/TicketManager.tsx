@@ -20,6 +20,7 @@ import {
   Trash2,
   MessageCircle,
 } from "lucide-react";
+import { logAdminAction } from "@/lib/activityLog";
 
 export function TicketManager() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -65,6 +66,7 @@ export function TicketManager() {
         .eq("id", id);
       if (error) throw error;
       toast.success(`Ticket marked as ${status}`);
+      logAdminAction("status_change", "support_ticket", id, `Changed ticket status to ${status}`);
       queryClient.invalidateQueries({ queryKey: ["admin-support-tickets"] });
     } catch (error: any) {
       toast.error(error.message || "Failed to update ticket");
@@ -80,6 +82,7 @@ export function TicketManager() {
         .eq("id", id);
       if (error) throw error;
       toast.success("Ticket deleted");
+      logAdminAction("delete", "support_ticket", id, "Deleted a support ticket");
       queryClient.invalidateQueries({ queryKey: ["admin-support-tickets"] });
     } catch (error: any) {
       toast.error(error.message || "Failed to delete ticket");

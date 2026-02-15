@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 import { UserPlus, Trash2, Shield } from "lucide-react";
+import { logAdminAction } from "@/lib/activityLog";
 
 type AppRole = "admin" | "vendor" | "buyer" | "super_admin";
 
@@ -48,6 +49,7 @@ export function UserRoleManager({
       if (error) throw error;
 
       toast.success(`Added ${selectedRole} role`);
+      logAdminAction("add_role", "user", userId, `Added role: ${selectedRole}`);
       setSelectedRole("");
       onRolesUpdated();
     } catch (error: any) {
@@ -75,6 +77,7 @@ export function UserRoleManager({
       if (error) throw error;
 
       toast.success(`Removed ${role} role`);
+      logAdminAction("remove_role", "user", userId, `Removed role: ${role}`);
       onRolesUpdated();
     } catch (error: any) {
       toast.error(error.message || "Failed to remove role");
